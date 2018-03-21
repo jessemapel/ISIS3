@@ -43,3 +43,5 @@ print.prt
 */tsts/*/output/*
 */build/
 */install/
+build/
+install/
