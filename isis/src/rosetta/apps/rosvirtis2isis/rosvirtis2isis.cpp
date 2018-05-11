@@ -95,10 +95,12 @@ void IsisMain ()
   // Will this number ever change? Where did this # come from?
   if (procLevel == 2) {
     p.SetDataTrailerBytes(864);
+    p.SaveDataTrailer();
   }
   else if ((procLevel == 3)) {
     p.SetDataTrailerBytes(0);
     p.SetDataSuffixBytes(4);
+    p.SaveDataSuffix();
   }
 
   p.StartProcess();
@@ -300,15 +302,7 @@ void IsisMain ()
           int word3 = swapb(uihk[uk+2]);
   #endif
 
-          double result;
-
-          // If any of the words comprising the SCET are invalid, the whole thing is invalid.
-          if (isValid(word1) && isValid(word2) && isValid(word3)) {
-            result = translateScet(word1, word2, word3);
-          }
-          else {
-            result = 65535;
-          }
+          double result = translateScet(word1, word2, word3);
 
           // If we don't have a valid SCET, the whole line of HK data is not valid, so we skip it.
           if (result == 0 || result == 65535) {
@@ -328,17 +322,22 @@ void IsisMain ()
     outcube->write(table);
   }
   else if (procLevel == 3) {
-    std::vector<char *> hkData = p.DataTrailer();
+    std::vector<std::vector<char *> > scetData = p.DataSuffix();
+    // std::cout << "Data suffix is " << scetData.size() << " by " << scetData.front().size() << std::endl;
     TableRecord rec;
     TableField scETField("dataSCET", TableField::Double);
     rec += scETField;
     Table table("VIRTISHouseKeeping", rec);
-    for (unsigned int i=0; i < hkData.size() ; i++) {
-      const char *hk = hkData.at(i);
-      const unsigned short *uihk = reinterpret_cast<const unsigned short *> (hk);
-      int word1 = swapb(uihk[0]);
-      int word2 = swapb(uihk[1]);
-      int word3 = swapb(uihk[2]);
+    for (unsigned int i=0; i < scetData.size() ; i++) {
+      std::vector<char *> lineScet = scetData.at(i);
+      // std::cout << "SCET for line " << i+1 << std::endl;
+      std::cout << swapb(*(reinterpret_cast<const unsigned short *> (lineScet[0])));
+      std::cout << "," << swapb(*(reinterpret_cast<const unsigned short *> (++lineScet[0])));
+      std::cout << "," << swapb(*(reinterpret_cast<const unsigned short *> (lineScet[1])));
+      std::cout << std::endl;
+      int word1 = swapb( *(reinterpret_cast<const unsigned short *> (lineScet[0])) );
+      int word2 = swapb( *(reinterpret_cast<const unsigned short *> (++lineScet[0])) );
+      int word3 = swapb( *(reinterpret_cast<const unsigned short *> (lineScet[1])) );
       rec[0] = translateScet(word1, word2, word3);
       table += rec;
     }
@@ -420,7 +419,8 @@ int swapb(const unsigned short int word) {
 
 /**
  * Translate the three constituent VIRTIS HK words into a 3-word SCET
- * (SpaceCraft Event Time) value.
+ * (SpaceCraft Event Time) value. If any of the words are invalid, then
+ * the Null value of 65535 is returned.
  *
  * @param word1 first word (most-significant word)
  * @param word2 second word
@@ -430,7 +430,10 @@ int swapb(const unsigned short int word) {
  */
 double translateScet(int word1, int word2, int word3)
 {
-  return (((double) word1 * pow(2.0,16.0)) + (double) word2 + ((double) word3)/pow(2.0,16.0));
+  if (isValid(word1) && isValid(word2) && isValid(word3)) {
+    return (((double) word1 * pow(2.0,16.0)) + (double) word2 + ((double) word3)/pow(2.0,16.0));
+  }
+  return 65535;
 }
 
 
