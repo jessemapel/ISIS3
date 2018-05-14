@@ -323,18 +323,12 @@ void IsisMain ()
   }
   else if (procLevel == 3) {
     std::vector<std::vector<char *> > scetData = p.DataSuffix();
-    // std::cout << "Data suffix is " << scetData.size() << " by " << scetData.front().size() << std::endl;
     TableRecord rec;
     TableField scETField("dataSCET", TableField::Double);
     rec += scETField;
     Table table("VIRTISHouseKeeping", rec);
     for (unsigned int i=0; i < scetData.size() ; i++) {
       std::vector<char *> lineScet = scetData.at(i);
-      // std::cout << "SCET for line " << i+1 << std::endl;
-      std::cout << swapb(*(reinterpret_cast<const unsigned short *> (lineScet[0])));
-      std::cout << "," << swapb(*(reinterpret_cast<const unsigned short *> (++lineScet[0])));
-      std::cout << "," << swapb(*(reinterpret_cast<const unsigned short *> (lineScet[1])));
-      std::cout << std::endl;
       int word1 = swapb( *(reinterpret_cast<const unsigned short *> (lineScet[0])) );
       int word2 = swapb( *(reinterpret_cast<const unsigned short *> (++lineScet[0])) );
       int word3 = swapb( *(reinterpret_cast<const unsigned short *> (lineScet[1])) );
