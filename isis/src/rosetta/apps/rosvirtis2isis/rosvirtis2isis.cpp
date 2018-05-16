@@ -97,7 +97,7 @@ void IsisMain ()
     p.SetDataTrailerBytes(864);
     p.SaveDataTrailer();
   }
-  else if ((procLevel == 3)) {
+  else if (procLevel == 3) {
     p.SetDataTrailerBytes(0);
     p.SetDataSuffixBytes(4);
     p.SaveDataSuffix();
