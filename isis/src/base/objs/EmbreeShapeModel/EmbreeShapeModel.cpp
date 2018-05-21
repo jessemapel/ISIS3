@@ -43,10 +43,10 @@ using namespace std;
 
 namespace Isis {
 
-  /**
+  /** 
    * Default constructor sets type to a TIN
    */
-  EmbreeShapeModel::EmbreeShapeModel()
+  EmbreeShapeModel::EmbreeShapeModel() 
       : ShapeModel(),
         m_targetShape(0),
         m_targetManager(0),
@@ -76,7 +76,7 @@ namespace Isis {
    * @param targetManager The target shape manager that will manage the target shape
    */
   EmbreeShapeModel::EmbreeShapeModel(Target *target, Pvl &pvl,
-                                     EmbreeTargetManager *targetManager)
+                                     EmbreeTargetManager *targetManager) 
       : ShapeModel(target),
         m_targetShape(0),
         m_targetManager(targetManager),
@@ -123,7 +123,7 @@ namespace Isis {
    * @param targetManager The target shape manager that will manage the target shape
    */
   EmbreeShapeModel::EmbreeShapeModel(Target *target, const QString &shapefile,
-                                     EmbreeTargetManager *targetManager)
+                                     EmbreeTargetManager *targetManager) 
       : ShapeModel(target),
         m_targetShape(0),
         m_targetManager(targetManager),
@@ -153,10 +153,10 @@ namespace Isis {
   }
 
 
-  /**
+  /** 
    * Destructor that notifies the target shape manager that the target shape
    * is no longer in use.
-   *
+   * 
    * @see EmbreeTargetManager::free
    */
   EmbreeShapeModel::~EmbreeShapeModel() {
@@ -202,22 +202,22 @@ namespace Isis {
 
 
 /**
- * @brief Compute intersection of surface vector direction from observer with
+ * @brief Compute intersection of surface vector direction from observer with 
  *        occulusion
- *
+ * 
  * This method computes a surface intersection point at a given latitude and
  * longitude. All surface points at that latitude and longitude are collected
  * and then the intersect that is non-occluded and closest to the observer is
  * saved. The unit surface normal is also saved.
- *
+ * 
  * If occlusion is not checked, then the closest intersection to the observer
  * is saved along with the unit surface normal.
- *
+ * 
  * @param lat The latitude of the surface intersection
  * @param lon The longitude of the surface intersection
  * @param observerPos The position of the observer for occlusion checks
  * @param backCheck If occlusion should be checked
- *
+ * 
  * @return @b bool If an intersection was found
  */
   bool EmbreeShapeModel::intersectSurface(const Latitude &lat, const Longitude &lon,
@@ -282,23 +282,23 @@ namespace Isis {
 
 
 /**
- * @brief Compute intersection of surface point from observer with occulusion
- *
+ * @brief Compute intersection of surface point from observer with occulusion 
+ *  
  * Compute the intersection point closest to a surface point. If occlusion is
  * checked, then the intersection that is both closest to the surface point and
  * non-occluded is saved. If occlusion is not checked, then the intersection
  * closest to the surface point is saved.
- *
+ * 
  * The unit surface normal is also saved when an intersection is saved.
- *
- *
+ * 
+ * 
  * @param surfpt Surface intercept point
  * @param observerPos Observer to check occlusion
  * @param backCheck If occlusion should be checked
- *
+ * 
  * @return @b bool If an intersection was found
  */
-  bool EmbreeShapeModel::intersectSurface(const SurfacePoint &surfpt,
+  bool EmbreeShapeModel::intersectSurface(const SurfacePoint &surfpt, 
                                           const std::vector<double> &observerPos,
                                           const bool &backCheck) {
     // Remove any previous intersection
@@ -307,9 +307,8 @@ namespace Isis {
     // Set up for finding all rays along origin vector through lat/lon surface point
     RTCMultiHitRay ray = pointToRay(surfpt);
 
-    // Extend the ray to be as long as the maximum distance in the body.
-    // This ensures we get all possible intersections.
-    ray.tfar = m_targetShape->maximumSceneDistance();
+    // Extend the ray to be 1.5 times the length of the SurfacePoint's radius
+    ray.tfar *= 1.5;
 
     m_targetShape->intersectRay(ray);
 
@@ -349,7 +348,7 @@ namespace Isis {
         obsRay.geomID = RTC_INVALID_GEOMETRY_ID;
         obsRay.primID = RTC_INVALID_GEOMETRY_ID;
         obsRay.mask = 0xFFFFFFFF;
-        obsRay.ignorePrimID = hits[i].primID;
+        obsRay.ignorePrimID = hits[i].primID; 
 
         // If the intersection point is no occluded,
         // then it is the closest intersection to the oberserver.
@@ -370,7 +369,7 @@ namespace Isis {
 
   /**
    * Update the ShapeModel given an intersection and normal.
-   *
+   * 
    * @param hitinfo The intersection and normal to internalize
    */
   void EmbreeShapeModel::updateIntersection(const RayHitInformation hitInfo) {
@@ -395,7 +394,7 @@ namespace Isis {
 
   /**
    * Flag that the ShapeModel does not have a surface point or normal.
-   *
+   * 
    * @note This does not actually delete the surface point or normal stored by
    *       the parent ShapeModel class, it just sets the flags to false.
    */
@@ -408,7 +407,7 @@ namespace Isis {
 
   /**
    * Determine radius at a given lat/lon grid point.
-   *
+   * 
    * @NOTE this call does not update the internal state of the intercept point.
    *       Use intersectSurface(lat, lon) for that.
    *
@@ -459,7 +458,7 @@ namespace Isis {
    * using the observer and look direction. If, the distance between the
    * surface point and new intersection is less than the tolerance, then the
    * surface point is considered to be visible.
-   *
+   * 
    * @param observerPos The position of the observer
    * @param lookDirection The look direction of the observer
    */
@@ -526,7 +525,7 @@ namespace Isis {
   }
 
 
-  /**
+  /** 
    * Return the surface normal of the ellipsoid as the default.
    */
   void EmbreeShapeModel::calculateDefaultNormal() {
@@ -535,7 +534,7 @@ namespace Isis {
   }
 
 
-  /**
+  /** 
    * Return the surface normal of the ellipsoid
    */
   void EmbreeShapeModel::calculateSurfaceNormal() {
@@ -624,7 +623,7 @@ namespace Isis {
 
     // Calculate the ellipsoid surface normal
     calculateDefaultNormal();
-
+    
     // Use ShapeModel to calculate the ellipsoid emission angle
     double ellipsoidEmission = ShapeModel::emissionAngle(observerBodyFixedPosition);
 
@@ -665,7 +664,7 @@ namespace Isis {
 
     // Calculate the ellipsoid surface normal
     calculateDefaultNormal();
-
+    
     // Use ShapeModel to calculate the ellipsoid incidence angle
     double ellipsoidEmission = ShapeModel::incidenceAngle(illuminatorBodyFixedPosition);
 
@@ -684,10 +683,10 @@ namespace Isis {
    * the target through that latitude and longitude. The ray length is set to
    * the maximum distance in the scene to ensure that it intersects all points
    * at that latitude and longitude.
-   *
+   * 
    * @param lat The latitude for the ray to pass through
    * @param lon The longitude for the ray to pass through
-   *
+   * 
    * @return @b RTCMultiHitRay A ray from the origin of the target through the
    *                           given latitude and longitude.
    */
@@ -715,9 +714,9 @@ namespace Isis {
   /**
    * Given a surface point, create a ray that goes from the origin of the
    * target to the surface point.
-   *
+   * 
    * @param surfpt The surface point for the ray to pass through
-   *
+   * 
    * @return @b RTCMultiHitRay A ray from the origin of the target to the
    *                           given surface point.
    */
@@ -757,11 +756,11 @@ namespace Isis {
    * Sort all intersections by a ray based on distance to a point. All
    * intersections are first stored in RayHitInformation objects and then
    * sorted.
-   *
+   * 
    * @param ray The ray to sort intersections for. The ray must already be
    *            intersected with the target shape by EmbreeTargetShape::intersectRay.
    * @param observer The point to sort the intersections based on.
-   *
+   * 
    * @return @b QVector<RayHitInformation> Vector containing the sorted
    *                                       intersections. The first
    *                                       intersection is the one closest to
@@ -786,9 +785,9 @@ namespace Isis {
   /**
    * Get the tolerance used when checking if the stored surface point is
    * visible.
-   *
+   * 
    * @return @b double The tolerance in kilometers
-   *
+   * 
    * @see isVisibleFrom
    */
   double EmbreeShapeModel::getTolerance() const {
@@ -799,9 +798,9 @@ namespace Isis {
   /**
    * Set the tolerance used when checking if the stored surface point is
    * visible.
-   *
+   * 
    * @param tolerance The new tolerance in kilometers
-   *
+   * 
    * @see isVisibleFrom
    */
   void EmbreeShapeModel::setTolerance(const double &tolerance) {
