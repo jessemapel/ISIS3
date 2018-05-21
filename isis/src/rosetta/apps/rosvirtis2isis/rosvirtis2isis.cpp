@@ -100,7 +100,9 @@ void IsisMain ()
   else if (procLevel == 3) {
     p.SetDataTrailerBytes(0);
     p.SetDataSuffixBytes(4);
+    p.SetFileTrailerBytes(outcube->bandCount() * outcube->sampleCount() * 4 * 3);
     p.SaveDataSuffix();
+    p.SaveFileTrailer();
   }
 
   p.StartProcess();
@@ -324,18 +326,37 @@ void IsisMain ()
   else if (procLevel == 3) {
     std::vector<std::vector<char *> > scetData = p.DataSuffix();
     TableRecord rec;
-    TableField scETField("dataSCET", TableField::Double);
-    rec += scETField;
+    TableField scET1Field("dataSCET1", TableField::Integer);
+    TableField scET2Field("dataSCET2", TableField::Integer);
+    TableField scET3Field("dataSCET3", TableField::Integer);
+    rec += scET1Field;
+    rec += scET2Field;
+    rec += scET3Field;
     Table table("VIRTISHouseKeeping", rec);
     for (unsigned int i=0; i < scetData.size() ; i++) {
       std::vector<char *> lineScet = scetData.at(i);
-      int word1 = swapb( *(reinterpret_cast<const unsigned short *> (lineScet[0])) );
-      int word2 = swapb( *(reinterpret_cast<const unsigned short *> (++lineScet[0])) );
-      int word3 = swapb( *(reinterpret_cast<const unsigned short *> (lineScet[1])) );
-      rec[0] = translateScet(word1, word2, word3);
+      rec[0] = swapb( *(reinterpret_cast<const unsigned short *> (lineScet[0])) );
+      rec[1] = swapb( *(reinterpret_cast<const unsigned short *> (++lineScet[0])) );
+      rec[2] = swapb( *(reinterpret_cast<const unsigned short *> (lineScet[1])) );
       table += rec;
     }
     outcube->write(table);
+
+    std::vector<float> band_centers(outcube->bandCount());
+    std::vector<float> band_widths(outcube->bandCount());
+    std::vector<float> band_uncertainty(outcube->bandCount());
+
+    char * fileTrailer = p.FileTrailer();
+    int frameOffset = outcube->bandCount()*outcube->sampleCount() * 4;
+    for (int band = 0; band < outcube->bandCount(); band++) {
+      int bandOffset = 4 * band;
+      band_centers[band] =
+            swapb( *(reinterpret_cast<const float *> (fileTrailer + bandOffset) ) );
+      band_widths[band] =
+            swapb( *(reinterpret_cast<const float *> (fileTrailer + bandOffset + frameOffset) ) );
+      band_uncertainty[band] =
+            swapb( *(reinterpret_cast<const float *> (fileTrailer + bandOffset + 2*frameOffset) ) );
+    }
   }
 
 
@@ -409,6 +430,19 @@ int swapb(const unsigned short int word) {
   swap(swapper.b[0], swapper.b[1]);
 
   return ( (int) swapper.w);
+}
+
+float swapb(const float value) {
+  union {
+    unsigned float w;
+    char b[4];
+  } swapper;
+
+  swapper.w = value;
+  swap(swapper.b[0], swapper.b[3]);
+  swap(swapper.b[1], swapper.b[2]);
+
+  return ( (float) swapper.w);
 }
 
 /**
