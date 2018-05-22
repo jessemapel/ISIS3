@@ -185,7 +185,6 @@ void IsisMain ()
     std::vector< char * > hkData = p.DataTrailer();
     for (unsigned int i=0; i < hkData.size() ; i++) {
       const char *hk = hkData.at(i);
-      const unsigned short *uihk = reinterpret_cast<const unsigned short *> (hk);
 
       // Each data trailer can contain multiple 82-word records, but we only need 1 / line
       int start = 0;
@@ -196,130 +195,104 @@ void IsisMain ()
       for (int k=0; k<82*2; k=k+2) {
         int temp = 0;
 
-        // Convert non-SCET records (1 two-byte word each) using the appropriate equations
-        if (k !=0 && k!=14 && k!=38 && k!=58 && k!=116) {
-          temp = word(hk[start + k], hk[start+k+1]);
-          if (temp != 65535) {
+        // Convert records using the appropriate equations
+        temp = word(hk[start + k], hk[start+k+1]);
+        if (temp != 65535) {
 
-            // If Sine or Cosine, pre-process before sending to conversion.
-            if (tableNum == 63) { // SIN
-              int HK_bit = (int) (((unsigned short int) temp) & 4095);
-              int HK_sign = (unsigned short int) (temp/4096.0) & 1;
-              rec[tableNum] = equations[tableNum].Evaluate((HK_sign * 1.0) * (HK_bit * 1.0));
-            } else if (tableNum == 64) { // COS
-              temp = (int) (temp) & 4095;
-              rec[tableNum] = equations[tableNum].Evaluate(temp * 1.0);
-            } else if (tableNum == 2) { // # of Subslices / first seial num 2-3
-              rec[tableNum] = hk[start+k]*1.0;
-              rec[tableNum+1] = hk[start+k+1]*1.0;
-              tableNum++;
-            } // Specical one-to-many cases (Flags or Statistics)
-            else if (tableNum == 4) { // Data Type 4-9
-              rec[tableNum] = (int)(temp/-32768) & 1;
-              rec[tableNum+1] = (int)(temp/16384) & 1;
-              rec[tableNum+2] = (int)(temp/8192) & 1;
-              rec[tableNum+3] = (int)(temp/1024) & 7;
-              rec[tableNum+4] = (int)(temp/256) & 3;
-              rec[tableNum+5] = (int)(temp/1) & 255;
-              tableNum+=5;
-            } else if (tableNum == 12) { // V_MODE 12-14
-              rec[tableNum] = 1.0* ((int)(temp/4096) & 15);
-              rec[tableNum+1] = 1.0* ((int)(temp/64) & 63);
-              rec[tableNum+2] = 1.0* ((int)(temp/1) & 63);
-              tableNum+=2;
-            } else if (tableNum == 15) { //ME_PWR_STAT 15 - 21
-              rec[tableNum] = 1.0* ((int)(temp/1) & 1);
-              rec[tableNum+1] = 1.0* ((int)(temp/2) & 1);
-              rec[tableNum+2] = 1.0* ((int)(temp/4) & 1);
-              rec[tableNum+3] = 1.0* ((int)(temp/8) & 1);
-              rec[tableNum+4] = 1.0* ((int)(temp/16) & 1);
-              rec[tableNum+5] = 1.0* ((int)(temp/32) & 1);
-              rec[tableNum+6] = 1.0* ((int)(temp/-32786) & 1);
-              tableNum+=6;
-            } else if (tableNum == 30){  // M_ECA_STAT 30-31
-              rec[tableNum] = 1.0* ((int)(temp/1) & 1);
-              rec[tableNum+1] = 1.0* ((int)(temp/256) & 1);
-              tableNum++;
-            } else if (tableNum == 32) { // M_COOL_STAT 32-34
-              rec[tableNum] = 1.0* ((int)(temp/1) & 1);
-              rec[tableNum+1] = 1.0* ((int)(temp/16) & 1);
-              rec[tableNum+2] = 1.0* ((int)(temp/256) & 1);
-              tableNum+=2;
-            }
-
-            else if (tableNum == 65) { // M_VIS_FLAG
-              rec[tableNum] = 1.0* ((int)(temp/1) & 1);
-              rec[tableNum+1] = 1.0* ((int)(temp/2) & 1);
-              rec[tableNum+2] = 1.0* ((int)(temp/4) & 1);
-              rec[tableNum+3] = 1.0* ((int)(temp/8) & 1);
-              rec[tableNum+4] = 1.0* ((int)(temp/16) & 1);
-              rec[tableNum+5] = 1.0* ((int)(temp/256) & 1);
-              tableNum+=5;
-            }
-            else if (tableNum == 91) { //M_IR_LAMP_SHUTTER
-              double lamp1 = 1.0* ((int)(temp/1) & 15);
-              rec[tableNum] = equations[tableNum].Evaluate(lamp1);
-              rec[tableNum+1] = 1.0* ((int)(temp/16) & 1);
-              double lamp2 = 1.0* ((int)(temp/256) & 15);
-              rec[tableNum+2] = equations[tableNum+1].Evaluate(lamp2);
-              rec[tableNum+3] = 1.0* ((int)(temp/4096) & 1);
-              tableNum+=3;
-            }
-            else if (tableNum == 95) { // M_IR_FLAG
-              rec[tableNum] = 1.0* ((int)(temp/1) & 1);
-              rec[tableNum+1] = 1.0* ((int)(temp/2) & 1);
-              rec[tableNum+2] = 1.0* ((int)(temp/4) & 1);
-              rec[tableNum+3] = 1.0* ((int)(temp/8) & 1);
-              rec[tableNum+4] = 1.0* ((int)(temp/16) & 1);
-              rec[tableNum+5] = 1.0* ((int)(temp/32) & 1);
-              rec[tableNum+6] = 1.0* ((int)(temp/64) & 1);
-              rec[tableNum+7] = 1.0* ((int)(temp/512) & 1);
-              rec[tableNum+8] = 1.0* ((int)(temp/4096) & 1);
-              rec[tableNum+9] = 1.0* ((int)(temp/8192) & 1);
-              rec[tableNum+10] = 1.0* ((int)(temp/16384) & 1);
-              tableNum+=10;
-            }
-            else {
-               // Convert a physical quantity to its output value (1 word -> 1 output physical value)
-               rec[tableNum] = equations[tableNum].Evaluate(temp * 1.0);
-            }
+          if (tableNum == 4) { // # of Subslices / first serial num 2-3
+            rec[tableNum] = hk[start+k]*1.0;
+            rec[tableNum+1] = hk[start+k+1]*1.0;
+            tableNum++;
+          } // Specical one-to-many cases (Flags or Statistics)
+          else if (tableNum == 6) { // Data Type
+            rec[tableNum] = (int)(temp/-32768) & 1;
+            rec[tableNum+1] = (int)(temp/16384) & 1;
+            rec[tableNum+2] = (int)(temp/8192) & 1;
+            rec[tableNum+3] = (int)(temp/1024) & 7;
+            rec[tableNum+4] = (int)(temp/256) & 3;
+            rec[tableNum+5] = (int)(temp/1) & 255;
+            tableNum+=5;
+          }
+          else if (tableNum == 16) { // V_MODE
+            rec[tableNum] = 1.0* ((int)(temp/4096) & 15);
+            rec[tableNum+1] = 1.0* ((int)(temp/64) & 63);
+            rec[tableNum+2] = 1.0* ((int)(temp/1) & 63);
+            tableNum+=2;
+          }
+          else if (tableNum == 19) { //ME_PWR_STAT
+            rec[tableNum] = 1.0* ((int)(temp/1) & 1);
+            rec[tableNum+1] = 1.0* ((int)(temp/2) & 1);
+            rec[tableNum+2] = 1.0* ((int)(temp/4) & 1);
+            rec[tableNum+3] = 1.0* ((int)(temp/8) & 1);
+            rec[tableNum+4] = 1.0* ((int)(temp/16) & 1);
+            rec[tableNum+5] = 1.0* ((int)(temp/32) & 1);
+            rec[tableNum+6] = 1.0* ((int)(temp/-32786) & 1);
+            tableNum+=6;
+          }
+          else if (tableNum == 36){  // M_ECA_STAT
+            rec[tableNum] = 1.0* ((int)(temp/1) & 1);
+            rec[tableNum+1] = 1.0* ((int)(temp/256) & 1);
+            tableNum++;
+          }
+          else if (tableNum == 38) { // M_COOL_STAT
+            rec[tableNum] = 1.0* ((int)(temp/1) & 1);
+            rec[tableNum+1] = 1.0* ((int)(temp/16) & 1);
+            rec[tableNum+2] = 1.0* ((int)(temp/256) & 1);
+            tableNum+=2;
+          }
+          else if (tableNum == 71) { // SIN
+            int HK_bit = (int) (((unsigned short int) temp) & 4095);
+            int HK_sign = (unsigned short int) (temp/4096.0) & 1;
+            rec[tableNum] = equations[tableNum].Evaluate((HK_sign * 1.0) * (HK_bit * 1.0));
+          }
+          else if (tableNum == 72) { // COS
+            temp = (int) (temp) & 4095;
+            rec[tableNum] = equations[tableNum].Evaluate(temp * 1.0);
+          }
+          else if (tableNum == 73) { // M_VIS_FLAG
+            rec[tableNum] = 1.0* ((int)(temp/1) & 1);
+            rec[tableNum+1] = 1.0* ((int)(temp/2) & 1);
+            rec[tableNum+2] = 1.0* ((int)(temp/4) & 1);
+            rec[tableNum+3] = 1.0* ((int)(temp/8) & 1);
+            rec[tableNum+4] = 1.0* ((int)(temp/16) & 1);
+            rec[tableNum+5] = 1.0* ((int)(temp/256) & 1);
+            tableNum+=5;
+          }
+          else if (tableNum == 101) { //M_IR_LAMP_SHUTTER
+            double lamp1 = 1.0* ((int)(temp/1) & 15);
+            rec[tableNum] = equations[tableNum].Evaluate(lamp1);
+            rec[tableNum+1] = 1.0* ((int)(temp/16) & 1);
+            double lamp2 = 1.0* ((int)(temp/256) & 15);
+            rec[tableNum+2] = equations[tableNum+1].Evaluate(lamp2);
+            rec[tableNum+3] = 1.0* ((int)(temp/4096) & 1);
+            tableNum+=3;
+          }
+          else if (tableNum == 105) { // M_IR_FLAG
+            rec[tableNum] = 1.0* ((int)(temp/1) & 1);
+            rec[tableNum+1] = 1.0* ((int)(temp/2) & 1);
+            rec[tableNum+2] = 1.0* ((int)(temp/4) & 1);
+            rec[tableNum+3] = 1.0* ((int)(temp/8) & 1);
+            rec[tableNum+4] = 1.0* ((int)(temp/16) & 1);
+            rec[tableNum+5] = 1.0* ((int)(temp/32) & 1);
+            rec[tableNum+6] = 1.0* ((int)(temp/64) & 1);
+            rec[tableNum+7] = 1.0* ((int)(temp/512) & 1);
+            rec[tableNum+8] = 1.0* ((int)(temp/4096) & 1);
+            rec[tableNum+9] = 1.0* ((int)(temp/8192) & 1);
+            rec[tableNum+10] = 1.0* ((int)(temp/16384) & 1);
+            tableNum+=10;
           }
           else {
-            rec[tableNum] = 65535.0; // HK Data is Invalid
+             // Convert a physical quantity to its output value (1 word -> 1 output physical value)
+             if (rec[tableNum].isDouble()) {
+               rec[tableNum] = equations[tableNum].Evaluate(temp * 1.0);
+             }
+             else {
+               rec[tableNum] = (int) equations[tableNum].Evaluate(temp * 1.0);
+             }
           }
         }
         else {
-          // Convert SCET records (3 words -> one output SCET)
-          int uk = k/2;
-  #if 0
-          int word1 = word(hk[start+k], hk[start+k+1]);
-          int word2 = word(hk[start+k+2], hk[start+k+3]);
-          int word3 = word(hk[start+k+4], hk[start+k+5]);
-  #else
-          int word1 = swapb(uihk[uk]);
-          int word2 = swapb(uihk[uk+1]);
-          int word3 = swapb(uihk[uk+2]);
-  #endif
-
-          double result;
-
-          // If any of the words comprising the SCET are invalid, the whole thing is invalid.
-          if (isValid(word1) && isValid(word2) && isValid(word3)) {
-            result = translateScet(word1, word2, word3);
-          }
-          else {
-            result = 65535;
-          }
-
-          // If we don't have a valid SCET, the whole line of HK data is not valid, so we skip it.
-          if (result == 0 || result == 65535) {
-            break;
-          }
-          else{
-            rec[tableNum] = result*1.0;
-          }
-          // We used 3 words
-          k=k+4;
+          rec[tableNum] = 65535.0; // HK Data is Invalid
         }
         tableNum++;
       }

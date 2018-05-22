@@ -61,6 +61,10 @@
     <change name="Jesse Mapel" date="2018-05-14">
        Nulled dark current scans in level 2 data. Fixes #5421.
     </change>
+    <change name="Jesse Mapel" date="2018-05-22">
+      Modified level 2 hk table to save all 3 scet words, instead of converting
+      to a single double. References #5398.
+    </change>
   </history>
 
   <category>
