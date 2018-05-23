@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="controlgraph" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+
+  <brief>
+    Checks the validity of a control network
+  </brief>
+
+  <description>
+    <p>
+      This program checks for the validity of a <def>Control Network</def>.  It
+      is recommended to run cnetcheck before running jigsaw (can use the same
+      input image cube list and control network) in order to catch a choice of
+      potential issues with the control network and the corresponding input
+      image cube list.
+    </p>
+    <p>
+      The default primary function of cnetcheck is to idenify any
+      <def link="Control Islands">Islands</def> within the control network
+      (CNET).  Each identified 'Island' will have an output file associated with
+      it ("PREFIX"_Island.#, where #=sequential number id).  The output Island
+      files contain the list of images connected together as a group, the file
+      includes the cube filenames and corresponding
+      <def link="Serial Number">serial numbers</def>.
+    </p>
+    <p>
+      NOTE1: If a serial number is identified as a single image island and the
+      corresponding image cube file name is not listed within the FROMLIST, then
+      the image cube filename will not be included in the appropriate island
+      file.
+    </p>
+    <p>
+      NOTE2: If it is discovered that a known island is missing an output island
+      file (i.e., output list not created as expected), it is possible that the
+      image cube file name(s) were not listed in the input list (FROMLIST).
+    </p>
+    <p>
+      All output files are created in the working directory where cnetcheck is
+      initiated.
+    </p>
+  </description>
+
+  <history>
+    <change name="Christopher Austin" date="2008-07-09">
+      Original version
+    </change>
+    <change name="Steven Lambright" date="2008-07-10">
+      Fixed output files to only show filenames and usage of c_str.
+    </change>
+    <change name="Christopher Austin" date="2008-07-28">
+      Fixed NoLatLon option.
+    </change>
+    <change name="Christopher Austin" date="2008-08-01">
+      Added Control Point IDs to the NoLatLon flat file.
+    </change>
+    <change name="Christopher Austin" date="2008-10-28">
+      Greatly optimized the NoLatLon option.
+    </change>
+    <change name="Steven Lambright" date="2008-11-24">
+      Renamed parameters: "LIST" is now "FROMLIST" and "CONTROL" is now "NETWORK"
+    </change>
+    <change name="Christopher Austin" date="2009-04-07">
+      Added the IGNORE option, which ignores ignored Control Points.
+    </change>
+    <change name="Christopher Austin" date="2009-04-23">
+      Added a results group that correlates parameter names to keywords,  fixed
+      the newline character outputs, and changed NOMATCH to NOCONTROL.
+    </change>
+    <change name="Christopher Austin" date="2009-05-15">
+      Fixed the island detecting to disregard ignored control points and other
+      bug fixes.
+    </change>
+    <change name="Christopher Austin" date="2009-06-03">
+      Fixed a bug with ignored Control Measures, changed NETWORK to CNET,
+      changed the output formats to be more useful and consistant.
+    </change>
+    <change name="Christopher Austin" date="2009-08-21">
+      Cleaned up syntax and improved readability.
+    </change>
+    <change name="Christopher Austin" date="2009-09-18">
+      Added the SINGLECUBE parameter, renaming SINGLE to SINGLEMEASURE as a consequence.
+    </change>
+    <change name="Mackenzie Boyd" date="2010-05-28">
+      Modified functionality of NOLATLON option to check all measures, not just
+      each cube.
+    </change>
+    <change name="Christopher Austin" date="2009-06-08">
+      Added the DELIMIT parameter
+    </change>
+    <change name="Christopher Austin" date="2010-10-06">
+      Fixed for binary cnet conversion.
+    </change>
+    <change name="Christopher Austin" date="2011-01-18">
+      Altered to compile with the new Control redesign.
+    </change>
+    <change name="Christopher Austin" date="2011-02-10">
+      Swapped the order of to serial number and filename in the NOCONTROL
+      output file.
+    </change>
+    <change name="James Alexander Crough and Eric Hyer" date="2011-06-15">
+      Added ability to check the ratio between the convex hull of the cnet and
+      its parent cube.
+    </change>
+    <change name="Travis Addair" date="2011-08-10">
+      Added LOWCOVERAGE option to make convex hull check optional.
+    </change>
+    <change name="Tammy Becker" date="2011-11-17">
+      Modified documentation and changed Tolerance default from 0.0 to 1.0.
+    </change>
+  </history>
+
+  <category>
+    <categoryItem>Control Networks</categoryItem>
+  </category>
+
+  <groups>
+    <group name="Input Files">
+
+      <parameter name="CNET">
+        <type>filename</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input Control Network file
+        </brief>
+        <description>
+          Use this parameter to specify the input Control Network file for
+          validation.
+        </description>
+        <filter>
+          *.net
+        </filter>
+      </parameter>
+
+    </group>
+  </groups>
+</application>
