@@ -10,16 +10,18 @@
 #include "VariableLineScanCameraDetectorMap.h"
 
 namespace Isis {
-  /** 
-   * @brief Camera model for both Rosetta VIRTIS-M instruments 
-   *  
-   * @ingroup SpiceInstrumentsAndCameras 
-   * @ingroup Rosetta 
+  /**
+   * @brief Camera model for both Rosetta VIRTIS-M instruments
+   *
+   * @ingroup SpiceInstrumentsAndCameras
+   * @ingroup Rosetta
    *
    * @author 2017-08-23 Kris Becker
    *
    * @internal
    *   @history 2017-08-23 Kris Becker Original Version
+   *   @history 2018-05-22 Jesse Mapel Modified time calculations to use the correct
+   *                           space craft clock string format. References #5398.
    */
   class RosettaVirtisCamera : public LineScanCamera {
     public:
@@ -52,16 +54,16 @@ namespace Isis {
       double startTime() const;
       double endTime() const;
 
-      Table getPointingTable(const QString &channelId, 
+      Table getPointingTable(const QString &channelId,
                              const int zeroFrame);
-      SMatrix getStateRotation(const QString &frame1, 
-                               const QString &frame2, 
+      SMatrix getStateRotation(const QString &frame1,
+                               const QString &frame2,
                                const double &et) const;
 
       bool hasArticulationKernel(Pvl &label) const;
 
-      /** 
-       *  
+      /**
+       *
        * @author ????-??-?? Unknown
        * @internal
        *   @history ????-??-?? Unknown - Original version.

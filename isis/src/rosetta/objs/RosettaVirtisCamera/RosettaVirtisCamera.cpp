@@ -30,12 +30,12 @@ namespace Isis {
     // constructors
   /**
    * Creates a camera for a Rosetta VIRTIS-M cube
-   * 
+   *
    * @param cube The cube to make a camera for
-   * 
+   *
    */
   RosettaVirtisCamera::RosettaVirtisCamera(Cube &cube) : LineScanCamera(cube) {
-    
+
     m_instrumentNameLong = "Visual and Infrared Thermal Imaging Spectrometer";
     m_instrumentNameShort = "VIRTIS";
     m_spacecraftNameLong = "Rosetta";
@@ -53,7 +53,7 @@ namespace Isis {
                       + instrumentId;
       throw IException(IException::User, mess, _FILEINFO_);
     }
-    
+
 
     int procLevel = inst["ProcessingLevelId"];
     m_is1BCalibrated = (procLevel > 2) ? true : false;
@@ -93,7 +93,7 @@ namespace Isis {
 
     // Get other info from labels
     PvlKeyword &frameParam = inst["FrameParameter"];
-    m_exposureTime = toDouble(frameParam[0]);
+    m_exposureTime = toDouble(frameParam[0])/1000;
     m_summing  = toDouble(frameParam[1]);
     m_scanRate = toDouble(frameParam[2]);
 
@@ -123,7 +123,7 @@ namespace Isis {
     new LineScanCameraSkyMap(this);
 
     // Set initial start time always (label start time is inaccurate)
-    setTime(iTime(startTime())); 
+    setTime(iTime(startTime()));
 
     //  Now check to determine if we have a cache already.  If we have a cache
     //  table, we are beyond spiceinit and have already computed the proper
@@ -163,39 +163,39 @@ namespace Isis {
   RosettaVirtisCamera::~RosettaVirtisCamera() {
   }
 
-  /** 
+  /**
    *  Returns CK frame identifier
-   * 
+   *
    * @return @b int The CK frame identifier.
    */
-  int RosettaVirtisCamera::CkFrameId() const {  
-    return (-226000); 
+  int RosettaVirtisCamera::CkFrameId() const {
+    return (-226000);
   }
 
 
-  /** 
+  /**
    *  Returns CK reference frame identifier
-   * 
+   *
    * @return @b int The CK reference frame identifier.
    */
-  int RosettaVirtisCamera::CkReferenceId() const { 
-    return (1); 
+  int RosettaVirtisCamera::CkReferenceId() const {
+    return (1);
   }
 
 
-  /** 
+  /**
    *  Return PK reference frame identifier
-   * 
+   *
    * @return @b int The SPK reference frame identifier
    */
-  int RosettaVirtisCamera::SpkReferenceId() const { 
-    return (1); 
+  int RosettaVirtisCamera::SpkReferenceId() const {
+    return (1);
   }
 
 
-  /** 
+  /**
    *  Return the pixel summing rate
-   * 
+   *
    * @return @b int The pixel summing rate.
    */
   int RosettaVirtisCamera::pixelSumming() const {
@@ -203,9 +203,9 @@ namespace Isis {
   }
 
 
-  /** 
+  /**
    *  Return the exposure time
-   * 
+   *
    * @return @b double The exposure time for a pixel.
    */
   double RosettaVirtisCamera::exposureTime() const {
@@ -213,9 +213,9 @@ namespace Isis {
   }
 
 
-  /** 
+  /**
    *  Return the line scan rate
-   * 
+   *
    * @return @b double The time between lines in the cube.
    */
   double RosettaVirtisCamera::scanLineTime() const {
@@ -223,9 +223,9 @@ namespace Isis {
   }
 
 
-  /** 
+  /**
    *  Return the start time for a given line exposure time
-   * 
+   *
    * @return @b double The et time at the start of the line's exposure.
    */
   double RosettaVirtisCamera::lineStartTime(const double midExpTime) const {
@@ -233,9 +233,9 @@ namespace Isis {
   }
 
 
-  /** 
+  /**
    *  Return the end time for a given line exposure time
-   * 
+   *
    * @return @b double The et time at the end of the line's exposure.
    */
   double RosettaVirtisCamera::lineEndTime(const double midExpTime) const {
@@ -243,9 +243,9 @@ namespace Isis {
   }
 
 
-  /** 
+  /**
    *  Return start time for the entire cube.
-   * 
+   *
    * @return @b double The et time at the start of the cube.
    */
   double RosettaVirtisCamera::startTime() const {
@@ -253,9 +253,9 @@ namespace Isis {
   }
 
 
-  /** 
+  /**
    *  Return end time for the entire cube.
-   * 
+   *
    * @return @b double The et time at the end of the cube.
    */
   double RosettaVirtisCamera::endTime() const {
@@ -263,9 +263,9 @@ namespace Isis {
   }
 
 
-  /** 
+  /**
    *  Returns number of housekeeping records found in the cube Table
-   * 
+   *
    * @return @b int The number of housekeeping records.
    */
   int RosettaVirtisCamera::hkLineCount() const {
@@ -281,7 +281,7 @@ namespace Isis {
    * MirrorSin, and MirrorCos.  These fields contain the scan line time in
    * SCLK, status of shutter - open, closed (dark), sine and cosine of the
    * scan mirror, respectively.
-   * 
+   *
    * @param filename The filename of the cube with the house keeping table.
    * @param linerate The linerate for the cube.
    *
@@ -297,7 +297,11 @@ namespace Isis {
    NumericalApproximation angFit;
    for (int i = 0; i < hktable.Records(); i++) {
      TableRecord &trec = hktable[i];
-     double scet = (double) trec["dataSCET"];
+     int scetWord1 = trec["dataSCET1"];
+     int scetWord2 = trec["dataSCET2"];
+     int scetWord3 = trec["dataSCET3"];
+     long int seconds = scetWord1 * pow(2,16) + scetWord2;
+     QString sclockString = toString(seconds) + ':' + toString(scetWord3);
      int shutterMode =  (int) trec["Data Type__Shutter state"];
 
      // Compute the optical mirror angle
@@ -311,7 +315,7 @@ namespace Isis {
      ScanMirrorInfo smInfo;
      double lineMidTime;
      //  scs2e_c(naifSpkCode(), scet.c_str(), &lineMidTime);
-     lineMidTime = getClockTime(toString(scet), naifSpkCode()).Et();
+     lineMidTime = getClockTime(sclockString, naifSpkCode()).Et();
      bool isDark = (shutterMode == 1);
 
      // Add fit data for all open angles
@@ -385,9 +389,9 @@ namespace Isis {
    * From the VIR housekeeping data, compute the pointing table for each line
    *  in the image.  This table is for instrumentRotation(Table &) to establish
    *  line/sample pointing information.
-   *  
+   *
    * @internal
-   *   @history 2011-07-22 Kris Becker 
+   *   @history 2011-07-22 Kris Becker
    */
   Table RosettaVirtisCamera::getPointingTable(const QString &virChannel,
                                         const int zeroFrame)  {
@@ -508,7 +512,7 @@ namespace Isis {
    *  acceleration vectors are then set to 0.
    *
    * @internal
-   *   @history 2011-07-22 Kris Becker 
+   *   @history 2011-07-22 Kris Becker
    */
 
   RosettaVirtisCamera::SMatrix RosettaVirtisCamera::getStateRotation(const QString &frame1,
@@ -551,12 +555,12 @@ namespace Isis {
    *  the labels.  If a kernel with the file pattern
    *  "ROS_VIRTIS_M_????_????_V?.BC" is present as a CK kernel, then that kernel
    *  contains mirror scan angles for each line.
-   *  
+   *
    *  If the kernel does not exist, this camera model will provide these angles
    *  from the VIR housekeeping data.
    *
    * @internal
-   *   @history 2011-07-22 Kris Becker 
+   *   @history 2011-07-22 Kris Becker
    */
   bool RosettaVirtisCamera::hasArticulationKernel(Pvl &label) const {
     Kernels kerns(label);
@@ -571,7 +575,7 @@ namespace Isis {
 
 }
 
-/** 
+/**
  *  Instantiate a new RosettaVirtisCamera model for the given label content
  */
 extern "C" Isis::Camera *RosettaVirtisCameraPlugin(Isis::Cube &cube) {
