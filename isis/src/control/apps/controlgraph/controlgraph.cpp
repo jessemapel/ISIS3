@@ -1,36 +1,17 @@
 #include "Isis.h"
-#include "IsisDebug.h"
 
 #include <iostream>
-#include <sstream>
-#include <set>
+#include <chrono>
 
 #include <QList>
-#include <QMap>
-#include <QStack>
-#include <QString>
-#include <QVector>
+#include <QHash>
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
 
-#include "Camera.h"
-#include "CameraFactory.h"
-#include "ControlMeasure.h"
 #include "ControlNet.h"
 #include "ControlPoint.h"
-#include "ControlPointList.h"
-#include "CubeManager.h"
-#include "FileList.h"
-#include "FileName.h"
-#include "IString.h"
-#include "Progress.h"
-#include "ProjectionFactory.h"
-#include "PvlGroup.h"
-#include "PvlKeyword.h"
-#include "SerialNumber.h"
-#include "SerialNumberList.h"
 #include "UserInterface.h"
 
 using namespace Isis;
@@ -53,8 +34,11 @@ typedef network::edge_descriptor imageConnection;
 void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
 
+  auto loadNetStart = std::chrono::high_resolution_clock::now();
   ControlNet net(ui.GetFileName("CNET"));
+  auto loadNetFinish = std::chrono::high_resolution_clock::now();
 
+  auto createGraphStart = std::chrono::high_resolution_clock::now();
   QList<QString> imageList = net.GetCubeSerials();
   QList<ControlPoint *> pointList = net.GetPoints();
   QHash<QString, imageVertex> vertexMap;
@@ -76,12 +60,22 @@ void IsisMain() {
       }
     }
   }
+  auto createGraphFinish = std::chrono::high_resolution_clock::now();
 
+  auto islandStart = std::chrono::high_resolution_clock::now();
   std::vector<int> component(boost::num_vertices(controlGraph));
   size_t numComponents = boost::connected_components(controlGraph, &component[0]);
+  auto islandFinish = std::chrono::high_resolution_clock::now();
+
+  auto loadNetTime  = std::chrono::duration_cast<std::chrono::duration<double>>(loadNetFinish - loadNetStart);
+  auto createGraphTime = std::chrono::duration_cast<std::chrono::duration<double>>(createGraphFinish - createGraphStart);
+  auto islandTime = std::chrono::duration_cast<std::chrono::duration<double>>(islandFinish - islandStart);
 
   std::cout << "Number of vertices: " << boost::num_vertices(controlGraph) << std::endl;
   std::cout << "Number of edges: " << boost::num_edges(controlGraph) << std::endl;
   std::cout << "Number of components: " << numComponents << std::endl;
+  std::cout << "Control network load time: " << loadNetTime.count() << std::endl;
+  std::cout << "Create graph time: " << createGraphTime.count() << std::endl;;
+  std::cout << "Count islands time: " << islandTime.count() << std::endl;
 
 }
