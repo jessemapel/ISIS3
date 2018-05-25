@@ -26,7 +26,7 @@ struct Connection {
 };
 
 // typedefs to help cut down on templated type bloat
-typedef boost::adjacency_list<boost::setS, boost::listS, boost::undirectedS, Image, Connection> Network;
+typedef boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, Image, Connection> Network;
 typedef Network::vertex_descriptor ImageVertex;
 typedef Network::edge_descriptor ImageConnection;
 typedef std::map<ImageVertex, size_t> VertexIndexMap;
@@ -60,9 +60,15 @@ void IsisMain() {
     QList<QString> pointMeasures = point->getCubeSerialNumbers();
     for (int i = 0; i < pointMeasures.size()-1; i++) {
       for (int j = i+1; j < pointMeasures.size(); j++) {
-        ImageConnection connection = boost::add_edge(vertexMap[pointMeasures[i]],
-                                                     vertexMap[pointMeasures[j]],
-                                                     controlGraph).first;
+        std::pair<ImageConnection, bool> edge = boost::edge(vertexMap[pointMeasures[i]],
+                                                            vertexMap[pointMeasures[j]],
+                                                            controlGraph);
+        ImageConnection connection = edge.first;
+        if (!edge.second) {
+          connection = boost::add_edge(vertexMap[pointMeasures[i]],
+                                       vertexMap[pointMeasures[j]],
+                                       controlGraph).first;
+        }
         controlGraph[connection].strength++;
       }
     }
