@@ -129,6 +129,18 @@
         <filter>
           *.net
         </filter>
+</parameter>
+
+      <parameter name="serial">
+        <type>string</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input Control Network file
+        </brief>
+        <description>
+          Use this parameter to specify the input Control Network file for
+          validation.
+        </description>
       </parameter>
 
     </group>
