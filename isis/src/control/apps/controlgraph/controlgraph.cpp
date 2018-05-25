@@ -26,11 +26,12 @@ struct Connection {
 };
 
 // typedefs to help cut down on templated type bloat
-typedef boost::adjacency_list<boost::setS, boost::listS, boost::undirectedS, Image, Connection> network;
-typedef network::vertex_descriptor imageVertex;
-typedef network::edge_descriptor imageConnection;
-typedef std::map<imageVertex, size_t> vertexIndexMap;
-typedef network::out_edge_iterator connectionIterator;
+typedef boost::adjacency_list<boost::setS, boost::listS, boost::undirectedS, Image, Connection> Network;
+typedef Network::vertex_descriptor ImageVertex;
+typedef Network::edge_descriptor ImageConnection;
+typedef std::map<ImageVertex, size_t> VertexIndexMap;
+typedef boost::associative_property_map<VertexIndexMap> VertexIndexMapAdaptor;
+typedef Network::out_edge_iterator ConnectionIterator;
 
 // Main program
 void IsisMain() {
@@ -43,14 +44,14 @@ void IsisMain() {
   auto createGraphStart = std::chrono::high_resolution_clock::now();
   QList<QString> imageList = net.GetCubeSerials();
   QList<ControlPoint *> pointList = net.GetPoints();
-  QHash<QString, imageVertex> vertexMap;
-  vertexIndexMap indexMap;
-  boost::associative_property_map<vertexIndexMap> indexMapAdaptor(indexMap);
+  QHash<QString, ImageVertex> vertexMap;
+  VertexIndexMap indexMap;
+  VertexIndexMapAdaptor indexMapAdaptor(indexMap);
 
-  network controlGraph;
+  Network controlGraph;
 
   for (int i = 0; i < imageList.size(); i++) {
-    imageVertex newVertex = boost::add_vertex(controlGraph);
+    ImageVertex newVertex = boost::add_vertex(controlGraph);
     vertexMap.insert(imageList[i], newVertex);
     boost::put(indexMapAdaptor, newVertex, i);
   }
@@ -59,7 +60,7 @@ void IsisMain() {
     QList<QString> pointMeasures = point->getCubeSerialNumbers();
     for (int i = 0; i < pointMeasures.size()-1; i++) {
       for (int j = i+1; j < pointMeasures.size(); j++) {
-        imageConnection connection = boost::add_edge(vertexMap[pointMeasures[i]],
+        ImageConnection connection = boost::add_edge(vertexMap[pointMeasures[i]],
                                                      vertexMap[pointMeasures[j]],
                                                      controlGraph).first;
         controlGraph[connection].strength++;
@@ -69,20 +70,20 @@ void IsisMain() {
   auto createGraphFinish = std::chrono::high_resolution_clock::now();
 
   auto islandStart = std::chrono::high_resolution_clock::now();
-  vertexIndexMap componentMap;
-  boost::associative_property_map<vertexIndexMap> componentAdaptor(componentMap);
+  VertexIndexMap componentMap;
+  VertexIndexMapAdaptor componentAdaptor(componentMap);
   size_t numComponents = boost::connected_components(controlGraph, componentAdaptor,
                                                      boost::vertex_index_map(indexMapAdaptor));
   auto islandFinish = std::chrono::high_resolution_clock::now();
 
   QString testSerial = ui.GetString("serial");
 
-  std::vector<std::pair<imageVertex, int>> adjacent_edges;
-  std::pair<connectionIterator, connectionIterator> adjacentIterators;
+  std::vector<std::pair<ImageVertex, int>> adjacent_edges;
+  std::pair<ConnectionIterator, ConnectionIterator> adjacentIterators;
   adjacentIterators = boost::out_edges(vertexMap[testSerial], controlGraph);
-  connectionIterator edgeIt = adjacentIterators.first;
+  ConnectionIterator edgeIt = adjacentIterators.first;
   while(edgeIt != adjacentIterators.second) {
-    std::pair<imageVertex, int> edge(boost::target(*edgeIt, controlGraph), controlGraph[*edgeIt].strength);
+    std::pair<ImageVertex, int> edge(boost::target(*edgeIt, controlGraph), controlGraph[*edgeIt].strength);
     adjacent_edges.push_back(edge);
     ++edgeIt;
   }
@@ -94,10 +95,10 @@ void IsisMain() {
   auto removeImageFinish = std::chrono::high_resolution_clock::now();
 
   auto addImageStart = std::chrono::high_resolution_clock::now();
-  imageVertex newVertex = boost::add_vertex(controlGraph);
+  ImageVertex newVertex = boost::add_vertex(controlGraph);
   vertexMap.insert(testSerial, newVertex);
   for(size_t i = 0; i < adjacent_edges.size(); i++) {
-    imageConnection connection = boost::add_edge(newVertex, adjacent_edges[i].first, controlGraph).first;
+    ImageConnection connection = boost::add_edge(newVertex, adjacent_edges[i].first, controlGraph).first;
     controlGraph[connection].strength = adjacent_edges[i].second;
   }
   auto addImageFinish = std::chrono::high_resolution_clock::now();
