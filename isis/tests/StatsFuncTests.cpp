@@ -2,35 +2,26 @@
 
 #include <iostream>
 
-#include <gtest/gtest.h>
+#include "gmock/gmock.h"
 
 #include "Cube.h"
 #include "FileName.h"
+#include "Histogram.h"
 #include "Pvl.h"
 #include "SpecialPixel.h"
 
 using namespace Isis;
 
-class StatsFunc_SimpleCubeTest : public ::testing::Test {
-  protected:
-    Cube *testCube;
-
-    void SetUp() override {
-      // This seems extraneous, but if an exception is thrown in the Cube
-      // constructor, then testCube may be non-NULL and un-assigned.
-      // This would cause TearDown to seg fault.
-      testCube = NULL;
-      testCube = new Cube(FileName("$ISIS3DATA/base/testData/isisTruth.cub"));
-    }
-
-    void TearDown() override {
-      if (testCube) {
-        delete testCube;
-        testCube = NULL;
-      }
-    }
+class MockCube : public Cube {
+  public:
+    MOCK_CONST_METHOD0(bandCount, int());
+    MOCK_CONST_METHOD0(fileName, QString());
+    MOCK_CONST_METHOD1(physicalBand, int(const int &virtualBand));
+    MOCK_METHOD4(histogram, Histogram*(
+          const int &band, const double &validMin,
+          const double &validMax,
+          QString msg));
 };
-
 
 class StatsFunc_FlatFileTest : public ::testing::Test {
   protected:
@@ -50,92 +41,157 @@ class StatsFunc_FlatFileTest : public ::testing::Test {
     }
 };
 
+class StatsFunc_MockHist : public ::testing::Test {
+  protected:
+    MockCube *mockCube;
+    Histogram *testBand1Stats;
+    Histogram *testBand2Stats;
 
-TEST_F(StatsFunc_SimpleCubeTest, DefaultStats) {
-  Pvl statsPvl = stats(testCube, Isis::ValidMinimum, Isis::ValidMaximum);
+    void SetUp() override {
+      mockCube = nullptr;
+      testBand1Stats = nullptr;
+      testBand2Stats = nullptr;
+
+      testBand1Stats = new Histogram(-10, 10, 21);
+      for (int val = -10; val <=10; val++) {
+        testBand1Stats->AddData(val);
+      }
+      testBand1Stats->AddData(0.0);
+
+      testBand2Stats = new Histogram(-10, 10, 21);
+      testBand2Stats->AddData(Null);
+      testBand2Stats->AddData(Lrs);
+      testBand2Stats->AddData(Lis);
+      testBand2Stats->AddData(His);
+      testBand2Stats->AddData(Hrs);
+
+      mockCube = new MockCube();
+      EXPECT_CALL(*mockCube, bandCount())
+            .Times(1)
+            .WillOnce(::testing::Return(2));
+      EXPECT_CALL(*mockCube, histogram(1, ::testing::_, ::testing::_, ::testing::_))
+            .Times(1)
+            .WillOnce(::testing::Return(testBand1Stats));
+      EXPECT_CALL(*mockCube, histogram(2, ::testing::_, ::testing::_, ::testing::_))
+            .Times(1)
+            .WillOnce(::testing::Return(testBand2Stats));
+      EXPECT_CALL(*mockCube, fileName())
+            .Times(2)
+            .WillRepeatedly(::testing::Return("TestCube.cub"));
+      EXPECT_CALL(*mockCube, physicalBand(1))
+            .Times(1)
+            .WillOnce(::testing::Return(1));
+      EXPECT_CALL(*mockCube, physicalBand(2))
+            .Times(1)
+            .WillOnce(::testing::Return(2));
+    }
+
+    void TearDown() override {
+      if (mockCube) {
+        delete mockCube;
+        mockCube = nullptr;
+      }
+    }
+};
+
+
+TEST_F(StatsFunc_MockHist, TestStats) {
+  Pvl statsPvl = stats(
+        mockCube,
+        Isis::ValidMinimum,
+        Isis::ValidMaximum);
+
   ASSERT_EQ(statsPvl.groups(), 2);
 
   PvlGroup band1Stats = statsPvl.group(0);
-  EXPECT_TRUE(band1Stats.findKeyword("Band").isEquivalent("1"));
-  EXPECT_TRUE(band1Stats.findKeyword("Average").isEquivalent("0.0"));
-  EXPECT_TRUE(band1Stats.findKeyword("StandardDeviation").isEquivalent("3.10108754392649e+19"));
-  EXPECT_TRUE(band1Stats.findKeyword("Variance").isEquivalent("9.61674395509603e+38"));
-  EXPECT_TRUE(band1Stats.findKeyword("Median").isEquivalent("1.52590222025006e+15"));
-  EXPECT_TRUE(band1Stats.findKeyword("Mode").isEquivalent("1.52590222025006e+15"));
-  EXPECT_TRUE(band1Stats.findKeyword("Skew").isEquivalent("-1.47616170001897e-04"));
-  EXPECT_TRUE(band1Stats.findKeyword("Minimum").isEquivalent("-1.00000002004088e+20"));
-  EXPECT_TRUE(band1Stats.findKeyword("Maximum").isEquivalent("1.00000002004088e+20"));
-  EXPECT_TRUE(band1Stats.findKeyword("Sum").isEquivalent("0.0"));
-  EXPECT_TRUE(band1Stats.findKeyword("TotalPixels").isEquivalent("15876"));
-  EXPECT_TRUE(band1Stats.findKeyword("ValidPixels").isEquivalent("7056"));
-  EXPECT_TRUE(band1Stats.findKeyword("OverValidMaximumPixels").isEquivalent("0"));
-  EXPECT_TRUE(band1Stats.findKeyword("UnderValidMinimumPixels").isEquivalent("0"));
-  EXPECT_TRUE(band1Stats.findKeyword("NullPixels").isEquivalent("1764"));
-  EXPECT_TRUE(band1Stats.findKeyword("LisPixels").isEquivalent("1764"));
-  EXPECT_TRUE(band1Stats.findKeyword("LrsPixels").isEquivalent("1764"));
-  EXPECT_TRUE(band1Stats.findKeyword("HisPixels").isEquivalent("1764"));
-  EXPECT_TRUE(band1Stats.findKeyword("HrsPixels").isEquivalent("1764"));
+  EXPECT_EQ("TestCube.cub", (QString) (band1Stats.findKeyword("From")));
+  EXPECT_EQ(1, (int) (band1Stats.findKeyword("Band")));
+  EXPECT_EQ(22, (int) (band1Stats.findKeyword("ValidPixels")));
+  EXPECT_EQ(22, (int) (band1Stats.findKeyword("TotalPixels")));
+  EXPECT_EQ(0, (int) (band1Stats.findKeyword("OverValidMaximumPixels")));
+  EXPECT_EQ(0, (int) (band1Stats.findKeyword("UnderValidMinimumPixels")));
+  EXPECT_EQ(0, (int) (band1Stats.findKeyword("NullPixels")));
+  EXPECT_EQ(0, (int) (band1Stats.findKeyword("LisPixels")));
+  EXPECT_EQ(0, (int) (band1Stats.findKeyword("LrsPixels")));
+  EXPECT_EQ(0, (int) (band1Stats.findKeyword("HisPixels")));
+  EXPECT_EQ(0, (int) (band1Stats.findKeyword("HrsPixels")));
+  EXPECT_EQ(0.0, (double) (band1Stats.findKeyword("Average")));
+  EXPECT_NEAR(6.0553, (double) (band1Stats.findKeyword("StandardDeviation")), 0.0001);
+  EXPECT_NEAR(36.6667, (double) (band1Stats.findKeyword("Variance")), 0.0001);
+  EXPECT_EQ(0.0, (double) (band1Stats.findKeyword("Median")));
+  EXPECT_EQ(0.0, (double) (band1Stats.findKeyword("Mode")));
+  EXPECT_EQ(0.0, (double) (band1Stats.findKeyword("Skew")));
+  EXPECT_EQ(-10, (double) (band1Stats.findKeyword("Minimum")));
+  EXPECT_EQ(10.0, (double) (band1Stats.findKeyword("Maximum")));
+  EXPECT_EQ(0.0, (double) (band1Stats.findKeyword("Sum")));
 
   PvlGroup band2Stats = statsPvl.group(1);
-  EXPECT_TRUE(band2Stats.findKeyword("Band").isEquivalent("2"));
-  EXPECT_TRUE(band2Stats.findKeyword("Average").isEquivalent("0.0"));
-  EXPECT_TRUE(band2Stats.findKeyword("StandardDeviation").isEquivalent("3.10108754392648e+19"));
-  EXPECT_TRUE(band2Stats.findKeyword("Variance").isEquivalent("9.61674395509598e+38"));
-  EXPECT_TRUE(band2Stats.findKeyword("Median").isEquivalent("1.52590222025006e+15"));
-  EXPECT_TRUE(band2Stats.findKeyword("Mode").isEquivalent("1.52590222025006e+15"));
-  EXPECT_TRUE(band2Stats.findKeyword("Skew").isEquivalent("-1.47616170001897e-04"));
-  EXPECT_TRUE(band2Stats.findKeyword("Minimum").isEquivalent("-1.00000002004088e+20"));
-  EXPECT_TRUE(band2Stats.findKeyword("Maximum").isEquivalent("1.00000002004088e+20"));
-  EXPECT_TRUE(band2Stats.findKeyword("Sum").isEquivalent("0.0"));
-  EXPECT_TRUE(band2Stats.findKeyword("TotalPixels").isEquivalent("15876"));
-  EXPECT_TRUE(band2Stats.findKeyword("ValidPixels").isEquivalent("7056"));
-  EXPECT_TRUE(band2Stats.findKeyword("OverValidMaximumPixels").isEquivalent("0"));
-  EXPECT_TRUE(band2Stats.findKeyword("UnderValidMinimumPixels").isEquivalent("0"));
-  EXPECT_TRUE(band2Stats.findKeyword("NullPixels").isEquivalent("1764"));
-  EXPECT_TRUE(band2Stats.findKeyword("LisPixels").isEquivalent("1764"));
-  EXPECT_TRUE(band2Stats.findKeyword("LrsPixels").isEquivalent("1764"));
-  EXPECT_TRUE(band2Stats.findKeyword("HisPixels").isEquivalent("1764"));
-  EXPECT_TRUE(band2Stats.findKeyword("HrsPixels").isEquivalent("1764"));
+  EXPECT_EQ("TestCube.cub", (QString) (band2Stats.findKeyword("From")));
+  EXPECT_EQ(2, (int) (band2Stats.findKeyword("Band")));
+  EXPECT_EQ(0, (int) (band2Stats.findKeyword("ValidPixels")));
+  EXPECT_EQ(5, (int) (band2Stats.findKeyword("TotalPixels")));
+  EXPECT_EQ(0, (int) (band2Stats.findKeyword("OverValidMaximumPixels")));
+  EXPECT_EQ(0, (int) (band2Stats.findKeyword("UnderValidMinimumPixels")));
+  EXPECT_EQ(1, (int) (band2Stats.findKeyword("NullPixels")));
+  EXPECT_EQ(1, (int) (band2Stats.findKeyword("LisPixels")));
+  EXPECT_EQ(1, (int) (band2Stats.findKeyword("LrsPixels")));
+  EXPECT_EQ(1, (int) (band2Stats.findKeyword("HisPixels")));
+  EXPECT_EQ(1, (int) (band2Stats.findKeyword("HrsPixels")));
 }
 
+TEST(StatsFunc, ValidMinimum) {
+  Histogram *testStats = new Histogram(-1000,1000);
 
-TEST_F(StatsFunc_SimpleCubeTest, ValidMinimum) {
-  Pvl statsPvl = stats(testCube, 0.0, Isis::ValidMaximum);
+  MockCube *mockCube = new MockCube();
+  EXPECT_CALL(*mockCube, bandCount())
+        .Times(1)
+        .WillOnce(::testing::Return(1));
+  EXPECT_CALL(*mockCube, histogram(1, 0.0, ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Return(testStats));
+  EXPECT_CALL(*mockCube, fileName())
+        .Times(1)
+        .WillRepeatedly(::testing::Return("TestCube.cub"));
+  EXPECT_CALL(*mockCube, physicalBand(1))
+        .Times(1)
+        .WillOnce(::testing::Return(1));
 
-  ASSERT_TRUE(statsPvl.groups() > 0);
+  Pvl statsPvl = stats(
+        dynamic_cast<Cube*>(mockCube),
+        0.0,
+        Isis::ValidMaximum);
 
-  PvlGroup band1Stats = statsPvl.group(0);
-  EXPECT_TRUE(band1Stats.findKeyword("Average").isEquivalent("8.97436438192763e+18"));
-  EXPECT_TRUE(band1Stats.findKeyword("StandardDeviation").isEquivalent("2.36768266129596e+19"));
-  EXPECT_TRUE(band1Stats.findKeyword("Variance").isEquivalent("5.6059211846015e+38"));
-  EXPECT_TRUE(band1Stats.findKeyword("Median").isEquivalent("0.0"));
-  EXPECT_TRUE(band1Stats.findKeyword("Mode").isEquivalent("0.0"));
-  EXPECT_TRUE(band1Stats.findKeyword("Skew").isEquivalent("1.1371073322405"));
-  EXPECT_TRUE(band1Stats.findKeyword("Minimum").isEquivalent("0.0"));
-  EXPECT_TRUE(band1Stats.findKeyword("Sum").isEquivalent("4.7492336309161e+22"));
-  EXPECT_TRUE(band1Stats.findKeyword("ValidPixels").isEquivalent("5292"));
-  EXPECT_TRUE(band1Stats.findKeyword("UnderValidMinimumPixels").isEquivalent("1764"));
+  delete mockCube;
+  mockCube = nullptr;
+  // The mock histogram will be cleaned up in the stats function
 }
 
+TEST(StatsFunc, ValidMaximum) {
+  Histogram *testStats = new Histogram(-1000,1000);
 
-TEST_F(StatsFunc_SimpleCubeTest, ValidMaximum) {
-  Pvl statsPvl = stats(testCube, Isis::ValidMinimum, 0.0);
+  MockCube *mockCube = new MockCube();
+  EXPECT_CALL(*mockCube, bandCount())
+        .Times(1)
+        .WillOnce(::testing::Return(1));
+  EXPECT_CALL(*mockCube, histogram(1, ::testing::_, 0.0, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Return(testStats));
+  EXPECT_CALL(*mockCube, fileName())
+        .Times(1)
+        .WillRepeatedly(::testing::Return("TestCube.cub"));
+  EXPECT_CALL(*mockCube, physicalBand(1))
+        .Times(1)
+        .WillOnce(::testing::Return(1));
 
-  ASSERT_TRUE(statsPvl.groups() > 0);
+  Pvl statsPvl = stats(
+        dynamic_cast<Cube*>(mockCube),
+        Isis::ValidMinimum,
+        0.0);
 
-  PvlGroup band1Stats = statsPvl.group(0);
-  EXPECT_TRUE(band1Stats.findKeyword("Average").isEquivalent("-1.29973553117573e+19"));
-  EXPECT_TRUE(band1Stats.findKeyword("StandardDeviation").isEquivalent("2.75618988835977e+19"));
-  EXPECT_TRUE(band1Stats.findKeyword("Variance").isEquivalent("7.59658270069666e+38"));
-  EXPECT_TRUE(band1Stats.findKeyword("Median").isEquivalent("-6681.625"));
-  EXPECT_TRUE(band1Stats.findKeyword("Mode").isEquivalent("-6681.625"));
-  EXPECT_TRUE(band1Stats.findKeyword("Skew").isEquivalent("-1.4147089828588"));
-  EXPECT_TRUE(band1Stats.findKeyword("Maximum").isEquivalent("0.0"));
-  EXPECT_TRUE(band1Stats.findKeyword("Sum").isEquivalent("-4.7492336309161e+22"));
-  EXPECT_TRUE(band1Stats.findKeyword("ValidPixels").isEquivalent("3654"));
-  EXPECT_TRUE(band1Stats.findKeyword("OverValidMaximumPixels").isEquivalent("3402"));
+  delete mockCube;
+  mockCube = nullptr;
+  // The mock histogram will be cleaned up in the stats function
 }
-
 
 TEST_F(StatsFunc_FlatFileTest, FlatFile) {
   std::ostringstream *testStream = new std::ostringstream();
@@ -143,9 +199,8 @@ TEST_F(StatsFunc_FlatFileTest, FlatFile) {
   EXPECT_EQ(testStream->str(), "0.0,Hello\nstats here,stats here\n");
 
   delete testStream;
-  testStream = NULL;
+  testStream = nullptr;
 }
-
 
 TEST_F(StatsFunc_FlatFileTest, FlatFileHeader) {
   std::ostringstream *testStream = new std::ostringstream();
@@ -153,5 +208,5 @@ TEST_F(StatsFunc_FlatFileTest, FlatFileHeader) {
   EXPECT_EQ(testStream->str(), "NumberKey,StringKey\n0.0,Hello\nstats here,stats here\n");
 
   delete testStream;
-  testStream = NULL;
+  testStream = nullptr;
 }

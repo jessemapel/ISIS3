@@ -8,7 +8,6 @@
 #include "Cube.h"
 #include "FileName.h"
 #include "Histogram.h"
-#include "Process.h"
 #include "Pvl.h"
 #include "UserInterface.h"
 
@@ -16,9 +15,14 @@ using namespace std;
 using namespace Isis;
 
 namespace Isis {
-  void stats(std::vector<char*>& args) {
-    // TODO is this line bad?
-    UserInterface ui("/work/users/jmapel/ISIS3/isis/src/base/apps/stats/stats.xml", args);
+
+  /**
+   * Compute the stats for an ISIS cube. This is the programmatic interface to
+   * the ISIS3 stats application.
+   *
+   * @param ui The User Interface to parse the parameters from
+   */
+  void stats(UserInterface &ui) {
 
     Cube *inputCube = new Cube();
     CubeAttributeInput inAtt(ui.GetAsString("FROM"));
@@ -45,7 +49,7 @@ namespace Isis {
     }
 
     delete inputCube;
-    inputCube = NULL;
+    inputCube = nullptr;
 
     if ( ui.WasEntered("TO") ) {
       QString outFile = FileName(ui.GetFileName("TO")).expanded();
@@ -75,18 +79,24 @@ namespace Isis {
         }
         writeStatsStream(statsPvl, writeHeader, os);
         delete os;
-        os = NULL;
+        os = nullptr;
       }
     }
   }
 
 
+  /**
+   * Compute statistics about a Cube and store them in a PVL object.
+   *
+   * @param cube The cube to compute the statistics of
+   * @param validMin The minimum pixel value to include in the statistics
+   * @param validMax The maximum pixel value to include in the statistics
+   *
+   * @return @b Pvl The statistics for the cube in a Pvl object
+   *
+   * @see Cube::histogram
+   */
   Pvl stats(Cube *cube, double validMin, double validMax) {
-
-    Process process;
-
-    // Get the histogram
-    process.SetInputCube(cube);
 
     // Set a global Pvl for storing results
     Pvl statsPvl;
@@ -126,14 +136,21 @@ namespace Isis {
       statsPvl.addGroup(results);
 
       delete stats;
-      stats = NULL;
+      stats = nullptr;
     }
 
     return statsPvl;
   }
 
 
-  void writeStatsStream(Pvl statsPvl, bool writeHeader, ostream *stream) {
+  /**
+   * Write a statistics Pvl to an output stream in a CSV format.
+   *
+   * @param statsPvl The Pvl to write out
+   * @param writeHeader If a header line should be written
+   * @param stram The stream to write to
+   */
+  void writeStatsStream(const Pvl &statsPvl, bool writeHeader, ostream *stream) {
     if (writeHeader) {
       for (int i = 0; i < statsPvl.group(0).keywords(); i++) {
         *stream << statsPvl.group(0)[i].name();
