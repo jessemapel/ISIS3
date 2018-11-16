@@ -44,21 +44,17 @@ class StatsFunc_FlatFileTest : public ::testing::Test {
 class StatsFunc_MockHist : public ::testing::Test {
   protected:
     MockCube *mockCube;
-    Histogram *testBand1Stats;
-    Histogram *testBand2Stats;
 
     void SetUp() override {
       mockCube = nullptr;
-      testBand1Stats = nullptr;
-      testBand2Stats = nullptr;
 
-      testBand1Stats = new Histogram(-10, 10, 21);
+      Histogram *testBand1Stats = new Histogram(-10, 10, 21);
       for (int val = -10; val <=10; val++) {
         testBand1Stats->AddData(val);
       }
       testBand1Stats->AddData(0.0);
 
-      testBand2Stats = new Histogram(-10, 10, 21);
+      Histogram *testBand2Stats = new Histogram(-10, 10, 21);
       testBand2Stats->AddData(Null);
       testBand2Stats->AddData(Lrs);
       testBand2Stats->AddData(Lis);
@@ -91,6 +87,7 @@ class StatsFunc_MockHist : public ::testing::Test {
         delete mockCube;
         mockCube = nullptr;
       }
+      // The histograms will be cleaned up by the stats function
     }
 };
 
@@ -163,7 +160,7 @@ TEST(StatsFunc, ValidMinimum) {
 
   delete mockCube;
   mockCube = nullptr;
-  // The mock histogram will be cleaned up in the stats function
+  // The histogram will be cleaned up in the stats function
 }
 
 TEST(StatsFunc, ValidMaximum) {
@@ -190,7 +187,7 @@ TEST(StatsFunc, ValidMaximum) {
 
   delete mockCube;
   mockCube = nullptr;
-  // The mock histogram will be cleaned up in the stats function
+  // The histogram will be cleaned up in the stats function
 }
 
 TEST_F(StatsFunc_FlatFileTest, FlatFile) {
