@@ -15,7 +15,7 @@ dependencies:
   - doxygen==1.8.14
   - eigen==3.3.3
   - embree==2.14.0
-  - geos==3.5.1
+  - conda-forge/label/cf201901::geos==3.5.1
   - geotiff==1.4.2
   - gmm==5.0
   - gmp==6.1.2
