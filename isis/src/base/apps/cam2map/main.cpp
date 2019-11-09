@@ -47,7 +47,7 @@ void IsisMain() {
   Pvl userMap;
   userMap.read(ui.GetFileName("MAP"));
   PvlGroup &userGrp = userMap.findGroup("Mapping", Pvl::Traverse);
-  
+
   // Open the input cube and get the camera
   icube = p.SetInputCube("FROM");
   incam = icube->camera();
@@ -76,7 +76,7 @@ void IsisMain() {
   // We want to delete the keywords we just added if the user wants the range
   // out of the mapfile, otherwise they will replace any keywords not in the
   // mapfile
-  
+
   // Use the updated label to create the output projection
   int samples, lines;
   TProjection *outmap = NULL;
@@ -91,7 +91,7 @@ void IsisMain() {
       throw IException(IException::User, msg, _FILEINFO_);
     }
   }
-  
+
   if ( !ui.GetBoolean("MATCHMAP") ) {
     if (ui.GetString("DEFAULTRANGE") == "MAP") {
       camGrp.deleteKeyword("MinimumLatitude");
@@ -306,16 +306,16 @@ void IsisMain() {
 
   // We will need a transform class
   Transform *transform = 0;
-  
+
   // Okay we need to decide how to apply the rubbersheeting for the transform
   // Does the user want to define how it is done?
   if (ui.GetString("WARPALGORITHM") == "FORWARDPATCH") {
     transform = new cam2mapForward(icube->sampleCount(),
-                                   icube->lineCount(), 
-                                   incam, 
+                                   icube->lineCount(),
+                                   incam,
                                    samples,
                                    lines,
-                                   outmap, 
+                                   outmap,
                                    trim);
 
     int patchSize = ui.GetInteger("PATCHSIZE");
@@ -345,7 +345,7 @@ void IsisMain() {
 
   // The user didn't want to override the program smarts.
   // Handle framing cameras.  Always process using the backward
-  // driven system (tfile).  
+  // driven system (tfile).
   else if (incam->GetCameraType() == Camera::Framing) {
     transform = new cam2mapReverse(icube->sampleCount(),
                                    icube->lineCount(), incam, samples,lines,
@@ -357,7 +357,7 @@ void IsisMain() {
   // The user didn't want to override the program smarts.
   // Handle linescan cameras.  Always process using the forward
   // driven patch option. Faster and we get better orthorectification
-  // 
+  //
   // TODO:  For now use the default patch size.  Need to modify
   // to determine patch size based on 1) if the limb is in the file
   // or 2) if the DTM is much coarser than the image
@@ -370,10 +370,10 @@ void IsisMain() {
   }
 
   // The user didn't want to override the program smarts.
-  // Handle pushframe cameras.  Always process using the forward driven patch 
-  // option.  It is much faster than the tfile method.  We will need to 
+  // Handle pushframe cameras.  Always process using the forward driven patch
+  // option.  It is much faster than the tfile method.  We will need to
   // determine patch sizes based on the size of the push frame.
-  // 
+  //
   // TODO: What if the user has run crop, enlarge, or shrink on the push
   // frame cube.  Things probably won't work unless they do it just right
   // TODO: What about the THEMIS VIS Camera.  Will tall narrow (128x4) patches
@@ -397,14 +397,63 @@ void IsisMain() {
     if (fabs(betaLine - 1.0) > 0.0000000001) {
       if (fabs(betaLine - (int) betaLine) > 0.00001) {
         string msg = "Input file is a pushframe camera cropped at a ";
-        msg += "fractional pixel.  Can not project"; 
+        msg += "fractional pixel.  Can not project";
         throw IException(IException::User, msg, _FILEINFO_);
       }
       int offset = (((int) (betaLine + 0.5)) - 1) % frameSize;
       startLine -= offset;
     }
 
-    if (((QString)instGrp["Framelets"]).toUpper() == "EVEN") {
+    // Shift the starting patch based on if the image is even/odd and unflipped/flipped
+    //
+    // For unflipped even images, the image data starts at the second framelet
+    // in the image.
+    //
+    // For flipped odd images with an even number of framelets, the image data
+    // starts at the second framelet in the image.
+    //
+    //
+    //  Unflipped image with even number of framelets
+    //
+    // 1|########|   1|        |
+    // 2|        |   2|########|
+    // 3|########|   3|        |
+    // 4|        |   4|########|
+    //     odd           even
+    //
+    //  flipped image with even number of framelets
+    //
+    // 4|        |   4|########|
+    // 3|########|   3|        |
+    // 2|        |   2|########|
+    // 1|########|   1|        |
+    //     odd           even
+    //
+    //
+    //  unflipped image with odd number of framelets
+    //
+    // 1|########|   1|        |
+    // 2|        |   2|########|
+    // 3|########|   3|        |
+    // 4|        |   4|########|
+    // 5|########|   5|        |
+    //     odd           even
+    //
+    //  flipped image with odd number of framelets
+    //
+    // 5|########|   5|        |
+    // 4|        |   4|########|
+    // 3|########|   3|        |
+    // 2|        |   2|########|
+    // 1|########|   1|        |
+    //     odd           even
+
+    // The only case when the first framelet is even is a flipped image with
+    // an even number of framelets
+    bool firstFrameletEven = !dmap->timeAscendingFramelets() && dmap->TotalFramelets() % 2 == 0;
+
+    if ( (((QString)instGrp["Framelets"]).toUpper() == "EVEN" && !firstFrameletEven) ||
+         (((QString)instGrp["Framelets"]).toUpper() == "ODD" && firstFrameletEven) ) {
       startLine += frameSize;
     }
 
@@ -414,7 +463,7 @@ void IsisMain() {
     p.processPatchTransform(*transform, *interp);
   }
 
-  // The user didn't want to override the program smarts.  The other camera 
+  // The user didn't want to override the program smarts.  The other camera
   // types have not be analyized.  This includes Radar and Point.  Continue to
   // use the reverse geom option with the default tiling hints
   else {
@@ -429,7 +478,7 @@ void IsisMain() {
     p.StartProcess(*transform, *interp);
   }
 
-  // Wrap up the warping process 
+  // Wrap up the warping process
   p.EndProcess();
 
   // add mapping to print.prt
@@ -696,4 +745,3 @@ void loadCameraRange() {
   ui.Clear("DEFAULTRANGE");
   ui.PutAsString("DEFAULTRANGE", "CAMERA");
 }
-
