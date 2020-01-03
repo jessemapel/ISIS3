@@ -234,7 +234,7 @@ TEST_F(spiceinitTestCube, CkConfigFile) {
   PvlKeyword instrumentPointing = kernels["InstrumentPointing"];
   ASSERT_EQ(instrumentPointing.size(), 4);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instrumentPointing[0], "Table");
-  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instrumentPointing[0], "$mro/kernels/ck/mro_crm_psp_110223_101128.bc");
-  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instrumentPointing[1], "$mro/kernels/ck/mro_sc_psp_110222_110228.bc");
-  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instrumentPointing[2], "$mro/kernels/fk/mro_v15.tf");
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instrumentPointing[1], "$mro/kernels/ck/mro_crm_psp_110223_101128.bc");
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instrumentPointing[2], "$mro/kernels/ck/mro_sc_psp_110222_110228.bc");
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instrumentPointing[3], "$mro/kernels/fk/mro_v15.tf");
 }
