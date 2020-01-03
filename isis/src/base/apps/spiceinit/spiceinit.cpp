@@ -464,7 +464,7 @@ namespace Isis {
 
     if (options.endpad > DBL_EPSILON) {
       currentKernels.addKeyword(PvlKeyword("EndPadding",
-                                           toString(options.endpad)), "seconds"));
+                                           toString(options.endpad), "seconds"));
     }
 
     currentKernels.addKeyword(
@@ -652,8 +652,8 @@ namespace Isis {
     if (shape == "user") {
       if (options.model.size() != 1) {
         throw IException(IException::User,
-                         "Exactly one shape model must be entered when shape is "
-                         "set to USER; [" + toString(options.model.size()) +
+                         "Exactly one shape model must be entered when shape is set to USER; [" +
+                         toString(static_cast<int>(options.model.size())) +
                          "] shape models were entered.",
                          _FILEINFO_);
       }
