@@ -58,17 +58,39 @@ namespace Isis {
     options.spksmithed = ui.GetBoolean("SPKSMITHED");
     options.spkrecon = ui.GetBoolean("SPKRECON");
     options.spkpredicted = ui.GetBoolean("SPKPREDICTED");
-    ui.GetAsString("LS", options.lsk);
-    ui.GetAsString("PCK", options.pck);
-    ui.GetAsString("TSPK", options.tspk);
-    ui.GetAsString("IK", options.ik);
-    ui.GetAsString("SCLK", options.sclk);
-    ui.GetAsString("CK", options.ck);
-    ui.GetAsString("FK", options.fk);
-    ui.GetAsString("SPK", options.spk);
-    ui.GetAsString("IAK", options.iak);
-    ui.GetAsString("EXTRA", options.extra);
-    ui.GetAsString("MODEL", options.model);
+    if (ui.WasEntered("LS")) {
+      ui.GetAsString("LS", options.lsk);
+    }
+    if (ui.WasEntered("PCK")) {
+      ui.GetAsString("PCK", options.pck);
+    }
+    if (ui.WasEntered("TSPK")) {
+      ui.GetAsString("TSPK", options.tspk);
+    }
+    if (ui.WasEntered("IK")) {
+      ui.GetAsString("IK", options.ik);
+    }
+    if (ui.WasEntered("SCLK")) {
+      ui.GetAsString("SCLK", options.sclk);
+    }
+    if (ui.WasEntered("CK")) {
+      ui.GetAsString("CK", options.ck);
+    }
+    if (ui.WasEntered("FK")) {
+      ui.GetAsString("FK", options.fk);
+    }
+    if (ui.WasEntered("SPK")) {
+      ui.GetAsString("SPK", options.spk);
+    }
+    if (ui.WasEntered("IAK")) {
+      ui.GetAsString("IAK", options.iak);
+    }
+    if (ui.WasEntered("EXTRA")) {
+      ui.GetAsString("EXTRA", options.extra);
+    }
+    if (ui.WasEntered("MODEL")) {
+      ui.GetAsString("MODEL", options.model);
+    }
     if (ui.GetString("SHAPE") == "ELLIPSOID") {
       options.shape = spiceinitOptions::ELLIPSOID;
     }
