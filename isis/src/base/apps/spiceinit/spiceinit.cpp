@@ -63,7 +63,7 @@ namespace Isis {
                     Pvl &labels,
                     QString missionName,
                     const spiceinitOptions &options,
-                    Pvl *log)
+                    Pvl *log);
 
   spiceinitOptions getSpiceinitOptions(UserInterface &ui) {
     spiceinitOptions options;
