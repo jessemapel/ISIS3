@@ -46,76 +46,13 @@ namespace Isis {
                     const spiceinitOptions &options,
                     Pvl *log);
 
-  spiceinitOptions getSpiceinitOptions(UserInterface &ui) {
-    spiceinitOptions options;
 
-    options.web = ui.GetBoolean("WEB");
-    options.attach = ui.GetBoolean("ATTACH");
-    options.cksmithed = ui.GetBoolean("CKSMITHED");
-    options.ckrecon = ui.GetBoolean("CKRECON");
-    options.ckpredicted = ui.GetBoolean("CKPREDICTED");
-    options.cknadir = ui.GetBoolean("CKNADIR");
-    options.spksmithed = ui.GetBoolean("SPKSMITHED");
-    options.spkrecon = ui.GetBoolean("SPKRECON");
-    options.spkpredicted = ui.GetBoolean("SPKPREDICTED");
-    if (ui.WasEntered("LS")) {
-      ui.GetAsString("LS", options.lsk);
-    }
-    if (ui.WasEntered("PCK")) {
-      ui.GetAsString("PCK", options.pck);
-    }
-    if (ui.WasEntered("TSPK")) {
-      ui.GetAsString("TSPK", options.tspk);
-    }
-    if (ui.WasEntered("IK")) {
-      ui.GetAsString("IK", options.ik);
-    }
-    if (ui.WasEntered("SCLK")) {
-      ui.GetAsString("SCLK", options.sclk);
-    }
-    if (ui.WasEntered("CK")) {
-      ui.GetAsString("CK", options.ck);
-    }
-    if (ui.WasEntered("FK")) {
-      ui.GetAsString("FK", options.fk);
-    }
-    if (ui.WasEntered("SPK")) {
-      ui.GetAsString("SPK", options.spk);
-    }
-    if (ui.WasEntered("IAK")) {
-      ui.GetAsString("IAK", options.iak);
-    }
-    if (ui.WasEntered("EXTRA")) {
-      ui.GetAsString("EXTRA", options.extra);
-    }
-    if (ui.WasEntered("MODEL")) {
-      ui.GetAsString("MODEL", options.model);
-    }
-    if (ui.GetString("SHAPE") == "ELLIPSOID") {
-      options.shape = spiceinitOptions::ELLIPSOID;
-    }
-    else if (ui.GetString("SHAPE") == "RINGPLANE") {
-      options.shape = spiceinitOptions::RINGPLANE;
-    }
-    else if (ui.GetString("SHAPE") == "SYSTEM") {
-      options.shape = spiceinitOptions::SYSTEM;
-    }
-    else if (ui.GetString("SHAPE") == "USER") {
-      options.shape = spiceinitOptions::USER;
-    }
-    else {
-      throw IException(IException::Unknown,
-                       "Unknown SHAPE option [" + ui.GetString("SHAPE") + "].",
-                       _FILEINFO_);
-    }
-    options.startpad = ui.GetDouble("STARTPAD");
-    options.endpad = ui.GetDouble("ENDPAD");
-    options.url = ui.GetString("URL");
-    options.port = ui.GetInteger("PORT");
-
-    return options;
-  }
-
+  /**
+   * Spiceinit a cube in an Application
+   *
+   * @param ui The Application UI
+   * @param(out) log The Pvl that attempted kernel sets will be logged to
+   */
   void spiceinit(UserInterface &ui, Pvl *log) {
     // Open the input cube
     Process p;
@@ -129,6 +66,14 @@ namespace Isis {
     p.EndProcess();
   }
 
+
+  /**
+   * Spiceinit a Cube
+   *
+   * @param cube The Cube to spiceinit
+   * @param options The options for how the cube should be spiceinit'd
+   * @param(out) log The Pvl that attempted kernel sets will be logged to
+   */
   void spiceinit(Cube *icube, const spiceinitOptions &options, Pvl *log) {
     // Open the input cube
     Process p;
@@ -333,14 +278,88 @@ namespace Isis {
 
 
   /**
-   * If the user entered the parameter param, then kernel is replaced by the
-   * user's values and quality is reset to 0. Otherwise, the kernels loaded by the
-   * KernelDb class will be kept.
+   * Parse the User Interface into an options struct.
    *
-   * @param param Name of the kernel input parameter
+   * @param ui The UI from an application
    *
-   * @param kernel Kernel object to be overwritten if the specified user parameter
-   *               was entered.
+   * @return An options object with the parameters from the UI.
+   */
+  spiceinitOptions getSpiceinitOptions(UserInterface &ui) {
+    spiceinitOptions options;
+
+    options.web = ui.GetBoolean("WEB");
+    options.attach = ui.GetBoolean("ATTACH");
+    options.cksmithed = ui.GetBoolean("CKSMITHED");
+    options.ckrecon = ui.GetBoolean("CKRECON");
+    options.ckpredicted = ui.GetBoolean("CKPREDICTED");
+    options.cknadir = ui.GetBoolean("CKNADIR");
+    options.spksmithed = ui.GetBoolean("SPKSMITHED");
+    options.spkrecon = ui.GetBoolean("SPKRECON");
+    options.spkpredicted = ui.GetBoolean("SPKPREDICTED");
+    if (ui.WasEntered("LS")) {
+      ui.GetAsString("LS", options.lsk);
+    }
+    if (ui.WasEntered("PCK")) {
+      ui.GetAsString("PCK", options.pck);
+    }
+    if (ui.WasEntered("TSPK")) {
+      ui.GetAsString("TSPK", options.tspk);
+    }
+    if (ui.WasEntered("IK")) {
+      ui.GetAsString("IK", options.ik);
+    }
+    if (ui.WasEntered("SCLK")) {
+      ui.GetAsString("SCLK", options.sclk);
+    }
+    if (ui.WasEntered("CK")) {
+      ui.GetAsString("CK", options.ck);
+    }
+    if (ui.WasEntered("FK")) {
+      ui.GetAsString("FK", options.fk);
+    }
+    if (ui.WasEntered("SPK")) {
+      ui.GetAsString("SPK", options.spk);
+    }
+    if (ui.WasEntered("IAK")) {
+      ui.GetAsString("IAK", options.iak);
+    }
+    if (ui.WasEntered("EXTRA")) {
+      ui.GetAsString("EXTRA", options.extra);
+    }
+    if (ui.WasEntered("MODEL")) {
+      ui.GetAsString("MODEL", options.model);
+    }
+    if (ui.GetString("SHAPE") == "ELLIPSOID") {
+      options.shape = spiceinitOptions::ELLIPSOID;
+    }
+    else if (ui.GetString("SHAPE") == "RINGPLANE") {
+      options.shape = spiceinitOptions::RINGPLANE;
+    }
+    else if (ui.GetString("SHAPE") == "SYSTEM") {
+      options.shape = spiceinitOptions::SYSTEM;
+    }
+    else if (ui.GetString("SHAPE") == "USER") {
+      options.shape = spiceinitOptions::USER;
+    }
+    else {
+      throw IException(IException::Unknown,
+                       "Unknown SHAPE option [" + ui.GetString("SHAPE") + "].",
+                       _FILEINFO_);
+    }
+    options.startpad = ui.GetDouble("STARTPAD");
+    options.endpad = ui.GetDouble("ENDPAD");
+    options.url = ui.GetString("URL");
+    options.port = ui.GetInteger("PORT");
+
+    return options;
+  }
+
+
+  /**
+   * Helper function to overwrite the system kernels with specified kernels.
+   *
+   * @param(in/out) kernel The Kernel object to overwrite
+   * @param userKernels The vector of specified kernels
    */
   void getUserEnteredKernel(Kernel &kernel,
                             const std::vector<QString> &userKernels) {
@@ -349,9 +368,29 @@ namespace Isis {
     }
   }
 
+
   /**
-    * This fuction now also adds any ShapeModel information specified in a
-    * preferences file to the Kernels group.
+    * Attempt to create a camera model from a set of kernels.
+    *
+    * @param(in/out) icube The Cube to create the camera from. If attach is true
+    *                      in the options, then the SPICE data will be written
+    *                      to the Cube's file.
+    * @param p The process object that the Cube belongs to
+    * @param options The spiceinit options
+    * @param(out) log The Application log
+    * @param lk The leap second kernels
+    * @param pck The planetary constant kernels
+    * @param targetspk The target state kernels
+    * @param ck The camera kernels
+    * @param fk The frame kernels
+    * @param ik The instrument kernels
+    * @param sclk The spacecraft clock kernels
+    * @param spk The spacecraft state kernels
+    * @param iak The instrument addendum kernels
+    * @param dem The digital elevation model
+    * @param exk The extra kernels
+    *
+    * @return If a camera model was successfully created
    */
   bool tryKernels(Cube *icube, Process &p,
                   const spiceinitOptions &options,
@@ -634,6 +673,16 @@ namespace Isis {
     return true;
   }
 
+
+  /**
+   * spiceinit a Cube via the spice web service
+   *
+   * @param icube The Cube to spiceinit
+   * @param labels The Cube label
+   * @param missionName The NAIF name of the mission the Cube is from
+   * @param options The spiceinit options
+   * @param log The Application log
+   */
   void requestSpice(Cube *icube,
                     Pvl &labels,
                     QString missionName,
