@@ -104,7 +104,7 @@ TEST_F(spiceinitTestCube, PredictAndReconCK) {
 
   spiceinitOptions options;
   options.ckrecon = true;
-  options.smithed = true;
+  options.cksmithed = true;
   options.attach = false;
 
   spiceinit(&testCube, options);
