@@ -48,13 +48,11 @@ namespace Isis {
   /**
    *
    */
-  Pvl spiceinit(UserInterface &ui) {
+  void spiceinit(UserInterface &ui, Pvl &appLog) {
     // Open the input cube
     Process p;
     CubeAttributeInput cai;
     Cube *icube = p.SetInputCube(ui.GetFileName("FROM"), cai, ReadWrite);
-
-    Pvl appLog;
 
     // Make sure at least one CK & SPK quality was selected
     if (!ui.GetBoolean("CKPREDICTED") && !ui.GetBoolean("CKRECON") &&
@@ -255,8 +253,6 @@ namespace Isis {
                          _FILEINFO_);
     }
     p.EndProcess();
-
-    return appLog;
   }
 
 
