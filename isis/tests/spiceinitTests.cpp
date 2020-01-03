@@ -23,7 +23,7 @@ class spiceinitTestCube : public ::testing::Test {
 
   void SetUp() override {
     tempFile.open();
-    testCube.setPixelType(UNSIGNEDBYTE);
+    testCube.setPixelType(UnsignedByte);
   }
 
   void TearDown() override {
