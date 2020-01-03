@@ -5,7 +5,7 @@
 #include "UserInterface.h"
 
 namespace Isis {
-  extern void spiceinit(UserInterface &ui, Pvl &appLog);
+  extern void spiceinit(UserInterface &ui, Pvl *appLog = nullptr);
 }
 
 #endif

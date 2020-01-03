@@ -13,7 +13,7 @@ void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
   Pvl appLog;
   try {
-    spiceinit(ui, appLog);
+    spiceinit(ui, &appLog);
   }
   catch (...) {
     for (auto grpIt = appLog.beginGroup(); grpIt!= appLog.endGroup(); grpIt++) {

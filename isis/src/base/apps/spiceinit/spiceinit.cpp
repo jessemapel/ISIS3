@@ -31,7 +31,7 @@ namespace Isis {
                             UserInterface &ui);
   bool tryKernels(Cube *icube, Process &p,
                   UserInterface &ui,
-                  Pvl &appLog,
+                  Pvl *appLog,
                   Kernel lk, Kernel pck,
                   Kernel targetSpk, Kernel ck,
                   Kernel fk, Kernel ik,
@@ -43,12 +43,12 @@ namespace Isis {
                     Pvl &labels,
                     QString missionName,
                     UserInterface &ui,
-                    Pvl &appLog);
+                    Pvl *appLog);
 
   /**
    *
    */
-  void spiceinit(UserInterface &ui, Pvl &appLog) {
+  void spiceinit(UserInterface &ui, Pvl *appLog) {
     // Open the input cube
     Process p;
     CubeAttributeInput cai;
@@ -282,7 +282,7 @@ namespace Isis {
    */
   bool tryKernels(Cube *icube, Process &p,
                   UserInterface &ui,
-                  Pvl &appLog,
+                  Pvl *appLog,
                   Kernel lk, Kernel pck,
                   Kernel targetSpk, Kernel ck,
                   Kernel fk, Kernel ik, Kernel sclk,
@@ -435,7 +435,9 @@ namespace Isis {
 
         currentKernels += source;
         icube->putGroup(currentKernels);
-        appLog += currentKernels;
+        if (appLog) {
+          appLog->addGroup(currentKernels);
+        }
       }
       catch(IException &e) {
         Pvl errPvl = e.toPvl();
@@ -444,7 +446,9 @@ namespace Isis {
           currentKernels += PvlKeyword("Error", errPvl.group(errPvl.groups() - 1)["Message"][0]);
         }
 
-        appLog += currentKernels;
+        if (appLog) {
+          appLog->addGroup(currentKernels);
+        }
         icube->putGroup(originalKernels);
         throw IException(e);
       }
@@ -561,7 +565,7 @@ namespace Isis {
                     Pvl &labels,
                     QString missionName,
                     UserInterface &ui,
-                    Pvl &appLog) {
+                    Pvl *appLog) {
     QString instrumentId =
         labels.findGroup("Instrument", Pvl::Traverse)["InstrumentId"][0];
 
@@ -645,7 +649,9 @@ namespace Isis {
       }*/
     }
 
-    appLog += logGrp;
+    if (appLog) {
+      appLog->addGroup(logGrp);
+    }
 
     icube->putGroup(kernelsGroup);
     icube->label()->addObject(naifKeywords);
