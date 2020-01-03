@@ -13,7 +13,6 @@ namespace Isis {
 
   struct spiceinitOptions {
     enum shapeSource {
-      SYSTEM,
       ELLIPSOID,
       RINGPLANE,
       SYSTEM,

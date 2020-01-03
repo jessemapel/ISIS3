@@ -26,6 +26,8 @@ using namespace Isis;
 
 namespace Isis {
 
+  spiceinitOptions getSpiceinitOptions(UserInterface &ui);
+
   void getUserEnteredKernel(const QString &param,
                             Kernel &kernel,
                             UserInterface &ui);
@@ -45,9 +47,8 @@ namespace Isis {
                     UserInterface &ui,
                     Pvl *log);
 
-  void getUserEnteredKernel(const QString &param,
-                            const spiceinitOptions &options,
-                            UserInterface &ui);
+  void getUserEnteredKernel(Kernel &kernel,
+                            const std::vector<QString> &userKernels);
   bool tryKernels(Cube *icube, Process &p,
                   const spiceinitOptions &options,
                   Pvl *log,
@@ -63,6 +64,54 @@ namespace Isis {
                     QString missionName,
                     const spiceinitOptions &options,
                     Pvl *log)
+
+  spiceinitOptions getSpiceinitOptions(UserInterface &ui) {
+    spiceinitOptions options;
+
+    options.web = ui.GetBoolean("WEB");
+    options.attach = ui.GetBoolean("ATTACH");
+    options.cksmithed = ui.GetBoolean("CKSMITHED");
+    options.ckrecon = ui.GetBoolean("CKRECON");
+    options.ckpredicted = ui.GetBoolean("CKPREDICTED");
+    options.cknadir = ui.GetBoolean("CKNADIR");
+    options.spksmithed = ui.GetBoolean("SPKSMITHED");
+    options.spkrecon = ui.GetBoolean("SPKRECON");
+    options.spkpredicted = ui.GetBoolean("SPKPREDICTED");
+    ui.GetAsString("LS", options.lsk);
+    ui.GetAsString("PCK", options.pck);
+    ui.GetAsString("TSPK", options.tspk);
+    ui.GetAsString("IK", options.ik);
+    ui.GetAsString("SCLK", options.sclk);
+    ui.GetAsString("CK", options.ck);
+    ui.GetAsString("FK", options.fk);
+    ui.GetAsString("SPK", options.spk);
+    ui.GetAsString("IAK", options.iak);
+    ui.GetAsString("EXTRA", options.extra);
+    ui.GetAsString("MODEL", options.model);
+    if (ui.GetString("SHAPE") == "ELLIPSOID") {
+      options.shape = spiceinitOptions::ELLIPSOID;
+    }
+    else if (ui.GetString("SHAPE") == "RINGPLANE") {
+      options.shape = spiceinitOptions::RINGPLANE;
+    }
+    else if (ui.GetString("SHAPE") == "SYSTEM") {
+      options.shape = spiceinitOptions::SYSTEM;
+    }
+    else if (ui.GetString("SHAPE") == "USER") {
+      options.shape = spiceinitOptions::USER;
+    }
+    else {
+      throw IException(IException::Unknown,
+                       "Unknown SHAPE option [" + ui.GetString("SHAPE") + "].",
+                       _FILEINFO_);
+    }
+    options.startpad = ui.GetDouble("STARTPAD");
+    options.endpad = ui.GetDouble("ENDPAD");
+    options.url = ui.GetString("URL");
+    options.port = ui.GetInteger("PORT");
+
+    return options;
+  }
 
   void spiceinit(Cube *icube, const spiceinitOptions &options, Pvl *log) {
     // Open the input cube
@@ -172,19 +221,19 @@ namespace Isis {
       }
 
       // Get user defined kernels and override ones already found
-      getUserEnteredKernel("LS", lk, options);
-      getUserEnteredKernel("PCK", pck, options);
-      getUserEnteredKernel("TSPK", targetSpk, options);
-      getUserEnteredKernel("FK", fk, options);
-      getUserEnteredKernel("IK", ik, options);
-      getUserEnteredKernel("SCLK", sclk, options);
-      getUserEnteredKernel("SPK", spk, options);
-      getUserEnteredKernel("IAK", iak, options);
-      getUserEnteredKernel("EXTRA", exk, options);
+      getUserEnteredKernel(lk, options.lsk);
+      getUserEnteredKernel(pck, options.pck);
+      getUserEnteredKernel(targetSpk, options.tspk);
+      getUserEnteredKernel(fk, options.fk);
+      getUserEnteredKernel(ik, options.ik);
+      getUserEnteredKernel(sclk, options.sclk);
+      getUserEnteredKernel(spk, options.spk);
+      getUserEnteredKernel(iak, options.iak);
+      getUserEnteredKernel(exk, options.extra);
 
       // Get shape kernel
       if (options.shape == spiceinitOptions::USER) {
-        getUserEnteredKernel("MODEL", dem, options);
+        getUserEnteredKernel(dem, options.model);
       }
       else if (options.shape == spiceinitOptions::SYSTEM) {
         dem = baseKernels.dem(lab);
@@ -195,11 +244,11 @@ namespace Isis {
       if ((ck.size() == 0 || ck.at(0).size() == 0) && options.ck.empty()) {
         // no ck was found in system and user did not enter ck, throw error
         throw IException(IException::Unknown,
-                         "No Camera Kernels found for the image [" + ui.GetFileName("FROM")
+                         "No Camera Kernels found for the image [" + icube->fileName()
                          + "]",
                          _FILEINFO_);
       }
-      else if (ui.WasEntered("CK")) {
+      else if (!options.ck.empty()) {
         // if user entered ck
         // empty ck queue list found in system
         while (ck.size()) {
@@ -220,11 +269,9 @@ namespace Isis {
 
         // if the user entered ck kernels, populate the ck kernel list with the
         // user entered files
-        if (ui.WasEntered("CK")) {
-          vector<QString> userEnteredCks;
-          ui.GetAsString("CK", userEnteredCks);
+        if (!options.ck.empty()) {
           // convert user entered std vector to QStringList and add to ckKernelList
-          ckKernelList = QVector<QString>::fromStdVector(userEnteredCks).toList();
+          ckKernelList = QVector<QString>::fromStdVector(options.ck).toList();
         }
         else {// loop through cks found in the system
 
@@ -267,6 +314,439 @@ namespace Isis {
     }
     p.EndProcess();
   }
+
+
+  /**
+   * If the user entered the parameter param, then kernel is replaced by the
+   * user's values and quality is reset to 0. Otherwise, the kernels loaded by the
+   * KernelDb class will be kept.
+   *
+   * @param param Name of the kernel input parameter
+   *
+   * @param kernel Kernel object to be overwritten if the specified user parameter
+   *               was entered.
+   */
+  void getUserEnteredKernel(Kernel &kernel,
+                            const std::vector<QString> &userKernels) {
+    if (!userKernels.empty()) {
+      kernel.setKernels(QVector<QString>::fromStdVector(userKernels).toList());
+    }
+  }
+
+  /**
+    * This fuction now also adds any ShapeModel information specified in a
+    * preferences file to the Kernels group.
+   */
+  bool tryKernels(Cube *icube, Process &p,
+                  const spiceinitOptions &options,
+                  Pvl *log,
+                  Kernel lk, Kernel pck,
+                  Kernel targetSpk, Kernel ck,
+                  Kernel fk, Kernel ik, Kernel sclk,
+                  Kernel spk, Kernel iak,
+                  Kernel dem, Kernel exk) {
+    // Add the new kernel files to the existing kernels group
+    PvlKeyword lkKeyword("LeapSecond");
+    PvlKeyword pckKeyword("TargetAttitudeShape");
+    PvlKeyword targetSpkKeyword("TargetPosition");
+    PvlKeyword ckKeyword("InstrumentPointing");
+    PvlKeyword ikKeyword("Instrument");
+    PvlKeyword sclkKeyword("SpacecraftClock");
+    PvlKeyword spkKeyword("InstrumentPosition");
+    PvlKeyword iakKeyword("InstrumentAddendum");
+    PvlKeyword demKeyword("ShapeModel");
+    PvlKeyword exkKeyword("Extra");
+
+    for (int i = 0; i < lk.size(); i++) {
+      lkKeyword.addValue(lk[i]);
+    }
+    for (int i = 0; i < pck.size(); i++) {
+      pckKeyword.addValue(pck[i]);
+    }
+    for (int i = 0; i < targetSpk.size(); i++) {
+      targetSpkKeyword.addValue(targetSpk[i]);
+    }
+    for (int i = 0; i < ck.size(); i++) {
+      ckKeyword.addValue(ck[i]);
+    }
+    for (int i = 0; i < ik.size(); i++) {
+      ikKeyword.addValue(ik[i]);
+    }
+    for (int i = 0; i < sclk.size(); i++) {
+      sclkKeyword.addValue(sclk[i]);
+    }
+    for (int i = 0; i < spk.size(); i++) {
+      spkKeyword.addValue(spk[i]);
+    }
+    for (int i = 0; i < iak.size(); i++) {
+      iakKeyword.addValue(iak[i]);
+    }
+
+    if (options.shape == spiceinitOptions::RINGPLANE) {
+      demKeyword.addValue("RingPlane");
+    }
+    else {
+      for (int i = 0; i < dem.size(); i++) {
+        demKeyword.addValue(dem[i]);
+      }
+    }
+    for (int i = 0; i < exk.size(); i++) {
+      exkKeyword.addValue(exk[i]);
+    }
+
+    PvlGroup originalKernels = icube->group("Kernels");
+    PvlGroup currentKernels = originalKernels;
+    currentKernels.addKeyword(lkKeyword, Pvl::Replace);
+    currentKernels.addKeyword(pckKeyword, Pvl::Replace);
+    currentKernels.addKeyword(targetSpkKeyword, Pvl::Replace);
+    currentKernels.addKeyword(ckKeyword, Pvl::Replace);
+    currentKernels.addKeyword(ikKeyword, Pvl::Replace);
+    currentKernels.addKeyword(sclkKeyword, Pvl::Replace);
+    currentKernels.addKeyword(spkKeyword, Pvl::Replace);
+    currentKernels.addKeyword(iakKeyword, Pvl::Replace);
+    currentKernels.addKeyword(demKeyword, Pvl::Replace);
+
+    // report qualities
+    PvlKeyword spkQuality("InstrumentPositionQuality");
+    spkQuality.addValue(Kernel::typeEnum(spk.type()));
+    currentKernels.addKeyword(spkQuality, Pvl::Replace);
+
+    PvlKeyword ckQuality("InstrumentPointingQuality");
+    ckQuality.addValue(Kernel::typeEnum(ck.type()));
+    currentKernels.addKeyword(ckQuality, Pvl::Replace);
+
+    if (!exkKeyword.isNull()) {
+      currentKernels.addKeyword(exkKeyword, Pvl::Replace);
+    }
+    else if (currentKernels.hasKeyword("EXTRA")) {
+      currentKernels.deleteKeyword("EXTRA");
+    }
+
+    // Get rid of old keywords from previously inited cubes
+    if (currentKernels.hasKeyword("Source"))
+      currentKernels.deleteKeyword("Source");
+
+    if (currentKernels.hasKeyword("SpacecraftPointing"))
+      currentKernels.deleteKeyword("SpacecraftPointing");
+
+    if (currentKernels.hasKeyword("SpacecraftPosition"))
+      currentKernels.deleteKeyword("SpacecraftPosition");
+
+    if (currentKernels.hasKeyword("ElevationModel"))
+      currentKernels.deleteKeyword("ElevationModel");
+
+    if (currentKernels.hasKeyword("Frame"))
+      currentKernels.deleteKeyword("Frame");
+
+    if (currentKernels.hasKeyword("StartPadding"))
+      currentKernels.deleteKeyword("StartPadding");
+
+    if (currentKernels.hasKeyword("EndPadding"))
+      currentKernels.deleteKeyword("EndPadding");
+
+    if (currentKernels.hasKeyword("RayTraceEngine")) {
+      currentKernels.deleteKeyword("RayTraceEngine");
+    }
+
+    if (currentKernels.hasKeyword("OnError")) {
+      currentKernels.deleteKeyword("OnError");
+    }
+
+    if (currentKernels.hasKeyword("Tolerance")) {
+      currentKernels.deleteKeyword("Tolerance");
+    }
+
+    // Add any time padding the user specified to the spice group
+    if (ui.GetDouble("STARTPAD") > DBL_EPSILON) {
+      currentKernels.addKeyword(PvlKeyword("StartPadding",
+                                           toString(options.startpad), "seconds"));
+    }
+
+    if (ui.GetDouble("ENDPAD") > DBL_EPSILON) {
+      currentKernels.addKeyword(PvlKeyword("EndPadding",
+                                           toString(options.endpad)), "seconds"));
+    }
+
+    currentKernels.addKeyword(
+        PvlKeyword("CameraVersion", toString(CameraFactory::CameraVersion(*icube))),
+        Pvl::Replace);
+
+    // Add the modified Kernels group to the input cube labels
+    icube->putGroup(currentKernels);
+
+    // Create the camera so we can get blobs if necessary
+    try {
+      Camera *cam;
+      try {
+        cam = icube->camera();
+        currentKernels = icube->group("Kernels");
+
+        PvlKeyword source("Source");
+
+        if (cam->isUsingAle()) {
+          source.setValue("ale");
+        }
+        else {
+          source.setValue("isis");
+        }
+
+        currentKernels += source;
+        icube->putGroup(currentKernels);
+        if (log) {
+          log->addGroup(currentKernels);
+        }
+      }
+      catch(IException &e) {
+        Pvl errPvl = e.toPvl();
+
+        if (errPvl.groups() > 0) {
+          currentKernels += PvlKeyword("Error", errPvl.group(errPvl.groups() - 1)["Message"][0]);
+        }
+
+        if (log) {
+          log->addGroup(currentKernels);
+        }
+        icube->putGroup(originalKernels);
+        throw IException(e);
+      }
+
+      if (options.attach) {
+        Table ckTable = cam->instrumentRotation()->Cache("InstrumentPointing");
+        ckTable.Label() += PvlKeyword("Description", "Created by spiceinit");
+        ckTable.Label() += PvlKeyword("Kernels");
+
+        for (int i = 0; i < ckKeyword.size(); i++)
+          ckTable.Label()["Kernels"].addValue(ckKeyword[i]);
+
+        icube->write(ckTable);
+
+        Table spkTable = cam->instrumentPosition()->Cache("InstrumentPosition");
+        spkTable.Label() += PvlKeyword("Description", "Created by spiceinit");
+        spkTable.Label() += PvlKeyword("Kernels");
+        for (int i = 0; i < spkKeyword.size(); i++)
+          spkTable.Label()["Kernels"].addValue(spkKeyword[i]);
+
+        icube->write(spkTable);
+
+        Table bodyTable = cam->bodyRotation()->Cache("BodyRotation");
+        bodyTable.Label() += PvlKeyword("Description", "Created by spiceinit");
+        bodyTable.Label() += PvlKeyword("Kernels");
+        for (int i = 0; i < targetSpkKeyword.size(); i++)
+          bodyTable.Label()["Kernels"].addValue(targetSpkKeyword[i]);
+
+        for (int i = 0; i < pckKeyword.size(); i++)
+          bodyTable.Label()["Kernels"].addValue(pckKeyword[i]);
+
+        bodyTable.Label() += PvlKeyword("SolarLongitude",
+            toString(cam->solarLongitude().degrees()));
+        icube->write(bodyTable);
+
+        Table sunTable = cam->sunPosition()->Cache("SunPosition");
+        sunTable.Label() += PvlKeyword("Description", "Created by spiceinit");
+        sunTable.Label() += PvlKeyword("Kernels");
+        for (int i = 0; i < targetSpkKeyword.size(); i++)
+          sunTable.Label()["Kernels"].addValue(targetSpkKeyword[i]);
+
+        icube->write(sunTable);
+
+        //  Save original kernels in keyword before changing to Table
+        PvlKeyword origCk = currentKernels["InstrumentPointing"];
+        PvlKeyword origSpk = currentKernels["InstrumentPosition"];
+        PvlKeyword origTargPos = currentKernels["TargetPosition"];
+
+        currentKernels["InstrumentPointing"] = "Table";
+        for (int i = 0; i < origCk.size(); i++)
+          currentKernels["InstrumentPointing"].addValue(origCk[i]);
+
+        currentKernels["InstrumentPosition"] = "Table";
+        for (int i = 0; i < origSpk.size(); i++)
+          currentKernels["InstrumentPosition"].addValue(origSpk[i]);
+
+        currentKernels["TargetPosition"] = "Table";
+        for (int i = 0; i < origTargPos.size(); i++)
+          currentKernels["TargetPosition"].addValue(origTargPos[i]);
+
+        icube->putGroup(currentKernels);
+
+        Pvl *label = icube->label();
+        int i = 0;
+        while (i < label->objects()) {
+          PvlObject currObj = label->object(i);
+          if (currObj.isNamed("NaifKeywords")) {
+            label->deleteObject(i);
+          }
+          else {
+            i ++;
+          }
+        }
+
+        *icube->label() += cam->getStoredNaifKeywords();
+      }
+      //modify Kernels group only
+      else {
+        Pvl *label = icube->label();
+        int i = 0;
+        while (i < label->objects()) {
+          PvlObject currObj = label->object(i);
+          if (currObj.isNamed("Table")) {
+            if (currObj["Name"][0] == QString("InstrumentPointing") ||
+                currObj["Name"][0] == QString("InstrumentPosition") ||
+                currObj["Name"][0] == QString("BodyRotation") ||
+                currObj["Name"][0] == QString("SunPosition")) {
+              label->deleteObject(i);
+            }
+            else {
+              i++;
+            }
+          }
+          else if (currObj.isNamed("NaifKeywords")) {
+            label->deleteObject(i);
+          }
+          else {
+            i++;
+          }
+        }
+      }
+
+      p.WriteHistory(*icube);
+    }
+    catch(IException &) {
+      icube->putGroup(originalKernels);
+      return false;
+    }
+
+    return true;
+  }
+
+  void requestSpice(Cube *icube,
+                    Pvl &labels,
+                    QString missionName,
+                    const spiceinitOptions &options,
+                    Pvl *log) {
+    QString instrumentId =
+        labels.findGroup("Instrument", Pvl::Traverse)["InstrumentId"][0];
+
+    QString url       = options.url + "?mission=" + missionName +
+                                      "&instrument=" + instrumentId;
+    int port          = ui.GetInteger("PORT");
+    QString shape;
+    switch options.shape {
+      case spiceinitOptions::ELLIPSOID:
+        shape = "ELLIPSOID";
+        break;
+      case spiceinitOptions::RINGPLANE:
+        shape = "RINGPLANE";
+        break;
+      case spiceinitOptions::SYSTEM:
+        shape = "SYSTEM";
+        break;
+      case spiceinitOptions::USER:
+        shape = "USER";
+        break;
+      default:
+        throw IException(IException::User,
+                         "Invalid shape option for spice server[" +
+                         static_cast<int>(options.shape) + "].",
+                         _FILEINFO_);
+        break;
+    }
+
+    if (shape == "user") {
+      if (options.model.size() != 1) {
+        throw IException(IException::User,
+                         "Exactly one shape model must be entered when shape is "
+                         "set to USER; [" + static_cast<int>(options.model.size()) +
+                         "] shape models were entered.",
+                         _FILEINFO_);
+      }
+      shape = options.model.front();
+
+      // Test for valid labels with mapping group at least
+      Pvl shapeTest(shape);
+      shapeTest.findGroup("Mapping", Pvl::Traverse);
+    }
+
+    double startPad = ui.GetDouble("STARTPAD");
+    double endPad   = ui.GetDouble("ENDPAD");
+
+    SpiceClient client(url, options.port, labels,
+                       options.cksmithed, options.ckrecon,
+                       options.ckpredicted, options.cknadir,
+                       options.spksmithed, options.spkrecon, options.spkpredicted,
+                       shape, options.startpad, options.endpad);
+
+    Progress connectionProgress;
+    connectionProgress.SetText("Requesting Spice Data");
+    connectionProgress.SetMaximumSteps(1);
+    connectionProgress.CheckStatus();
+    SpiceClientStarter starter(client);
+    starter.start();
+    client.blockUntilComplete();
+    connectionProgress.CheckStatus();
+
+    PvlGroup kernelsGroup = client.kernelsGroup();
+    PvlGroup logGrp = client.applicationLog();
+    PvlObject naifKeywords = client.naifKeywordsObject();
+    Table *pointingTable = client.pointingTable();
+    Table *positionTable = client.positionTable();
+    Table *bodyTable = client.bodyRotationTable();
+    Table *sunPosTable = client.sunPositionTable();
+
+    // Verify everything in the kernels group exists, if not then our kernels are
+    //   out of date.
+    for (int keywordIndex = 0;
+        keywordIndex < kernelsGroup.keywords();
+        keywordIndex++) {
+      PvlKeyword &curKeyword = kernelsGroup[keywordIndex];
+
+      if (curKeyword.name() == "NaifFrameCode" ||
+          curKeyword.name() == "InstrumentPointingQuality" ||
+          curKeyword.name() == "InstrumentPositionQuality" ||
+          curKeyword.name() == "CameraVersion" ||
+          curKeyword.name() == "TargetPosition" ||
+          curKeyword.name() == "InstrumentPointing" ||
+          curKeyword.name() == "InstrumentPosition" ||
+          curKeyword.name() == "TargetAttitudeShape") {
+        continue;
+      }
+    }
+
+    if (log) {
+      log->addGroup(logGrp);
+    }
+
+    icube->putGroup(kernelsGroup);
+    icube->label()->addObject(naifKeywords);
+
+    icube->write(*pointingTable);
+    icube->write(*positionTable);
+    icube->write(*bodyTable);
+    icube->write(*sunPosTable);
+
+    try {
+      icube->camera();
+    }
+    catch (IException &e) {
+      throw IException(e, IException::Unknown,
+         "The SPICE server returned incompatible SPICE data",
+          _FILEINFO_);
+    }
+
+    delete pointingTable;
+    pointingTable = NULL;
+
+    delete positionTable;
+    positionTable = NULL;
+
+    delete bodyTable;
+    bodyTable = NULL;
+
+    delete sunPosTable;
+    sunPosTable = NULL;
+  }
+
+
+///////////////// OLD UI interface ////////////////////////////////////////////
 
   /**
    *
