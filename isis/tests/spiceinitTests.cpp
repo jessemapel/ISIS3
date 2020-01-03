@@ -5,7 +5,7 @@
 #include "spiceinit.h"
 
 #include "Cube.h"
-#include "FileName.h"
+#include "CubeAttribute.h"
 #include "Pvl.h"
 #include "PvlGroup.h"
 #include "PvlKeyword.h"
@@ -22,8 +22,9 @@ class spiceinitTestCube : public ::testing::Test {
 
   void SetUp() override {
     Cube baseCube("$base/testData/isisTruth.cub", "rw");
+    CubeAttributeOutput cubeAtts;
     tempFile.open();
-    testCube = baseCube.copy(FileName(tempFile.fileName()));
+    testCube = baseCube.copy(tempFile.fileName(), cubeAtts);
   }
 
   void TearDown() override {
