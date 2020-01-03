@@ -457,12 +457,12 @@ namespace Isis {
     }
 
     // Add any time padding the user specified to the spice group
-    if (ui.GetDouble("STARTPAD") > DBL_EPSILON) {
+    if (options.startpad > DBL_EPSILON) {
       currentKernels.addKeyword(PvlKeyword("StartPadding",
                                            toString(options.startpad), "seconds"));
     }
 
-    if (ui.GetDouble("ENDPAD") > DBL_EPSILON) {
+    if (options.endpad > DBL_EPSILON) {
       currentKernels.addKeyword(PvlKeyword("EndPadding",
                                            toString(options.endpad)), "seconds"));
     }
@@ -626,11 +626,9 @@ namespace Isis {
     QString instrumentId =
         labels.findGroup("Instrument", Pvl::Traverse)["InstrumentId"][0];
 
-    QString url       = options.url + "?mission=" + missionName +
-                                      "&instrument=" + instrumentId;
-    int port          = ui.GetInteger("PORT");
+    QString url = options.url + "?mission=" + missionName + "&instrument=" + instrumentId;
     QString shape;
-    switch options.shape {
+    switch (options.shape) {
       case spiceinitOptions::ELLIPSOID:
         shape = "ELLIPSOID";
         break;
@@ -665,9 +663,6 @@ namespace Isis {
       Pvl shapeTest(shape);
       shapeTest.findGroup("Mapping", Pvl::Traverse);
     }
-
-    double startPad = ui.GetDouble("STARTPAD");
-    double endPad   = ui.GetDouble("ENDPAD");
 
     SpiceClient client(url, options.port, labels,
                        options.cksmithed, options.ckrecon,
