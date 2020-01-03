@@ -221,7 +221,7 @@ TEST_F(spiceinitTestCube, CkConfigFile) {
   testCube->setDimensions(crismDimensions["Samples"],
                           crismDimensions["Lines"],
                           crismDimensions["Bands"]);
-  testCube.reopen("rw");
+  testCube->reopen("rw");
   testCube->putGroup(crismLabel.findObject("IsisCube").findGroup("Instrument"));
   testCube->putGroup(crismLabel.findObject("IsisCube").findGroup("Archive"));
   testCube->putGroup(crismLabel.findObject("IsisCube").findGroup("Kernels"));
