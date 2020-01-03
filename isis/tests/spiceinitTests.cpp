@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <QTemporaryFile>
+
 #include "spiceinit.h"
 
 #include "Cube.h"
@@ -14,10 +16,19 @@ using namespace Isis;
 
 class spiceinitTestCube : public ::testing::Test {
   protected:
-    Cube testCube;
+    Cube *testCube;
+    QTemporaryFile tempFile;
 
-  void SetUp() {
-    testCube.open("$base/testData/isisTruth.cub");
+  void SetUp() override {
+    Cube baseCube("$base/testData/isisTruth.cub", "rw");
+    tempFile.open();
+    testCube = baseCube.copy(tempFile.fileName());
+  }
+
+  void TearDown() override {
+    if (testCube) {
+      delete testCube;
+    }
   }
 };
 
