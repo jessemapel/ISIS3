@@ -19,7 +19,7 @@ class spiceinitTestCube : public ::testing:Test {
   }
 }
 
-TEST_F(ConstVelIsd, PredictAndReconCK) {
+TEST_F(spiceinitTestCube, PredictAndReconCK) {
 
   std::istringstream clementineLabelStrm(R"(
     Object = IsisCube
