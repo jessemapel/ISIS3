@@ -31,7 +31,7 @@ namespace Isis {
                             UserInterface &ui);
   bool tryKernels(Cube *icube, Process &p,
                   UserInterface &ui,
-                  Pvl *appLog,
+                  Pvl *log,
                   Kernel lk, Kernel pck,
                   Kernel targetSpk, Kernel ck,
                   Kernel fk, Kernel ik,
@@ -43,12 +43,235 @@ namespace Isis {
                     Pvl &labels,
                     QString missionName,
                     UserInterface &ui,
-                    Pvl *appLog);
+                    Pvl *log);
+
+  void getUserEnteredKernel(const QString &param,
+                            const spiceinitOptions &options,
+                            UserInterface &ui);
+  bool tryKernels(Cube *icube, Process &p,
+                  const spiceinitOptions &options,
+                  Pvl *log,
+                  Kernel lk, Kernel pck,
+                  Kernel targetSpk, Kernel ck,
+                  Kernel fk, Kernel ik,
+                  Kernel sclk, Kernel spk,
+                  Kernel iak, Kernel dem,
+                  Kernel exk);
+
+  void requestSpice(Cube *icube,
+                    Pvl &labels,
+                    QString missionName,
+                    const spiceinitOptions &options,
+                    Pvl *log)
+
+  void spiceinit(Cube *icube, const spiceinitOptions &options, Pvl *log) {
+    // Open the input cube
+    Process p;
+    p.SetInputCube(icube);
+
+    // Make sure at least one CK & SPK quality was selected
+    if (!(options.cksmithed || options.ckrecon || options.ckpredicted || options.cknadir)) {
+      QString msg = "At least one CK quality must be selected";
+      throw IException(IException::User, msg, _FILEINFO_);
+    }
+    if (!(options.spksmithed || options.spkrecon || options.spkpredicted)) {
+      QString msg = "At least one SPK quality must be selected";
+      throw IException(IException::User, msg, _FILEINFO_);
+    }
+
+    // Make sure it is not projected
+    Projection *proj = NULL;
+    try {
+      proj = icube->projection();
+    }
+    catch(IException &) {
+      proj = NULL;
+    }
+
+    if (proj != NULL) {
+      QString msg = "Can not initialize SPICE for a map projected cube";
+      throw IException(IException::User, msg, _FILEINFO_);
+    }
+
+    Pvl lab = *icube->label();
+
+    // if cube has existing polygon delete it
+    if (icube->label()->hasObject("Polygon")) {
+      icube->label()->deleteObject("Polygon");
+    }
+
+    // Set up for getting the mission name
+    // Get the directory where the system missions translation table is.
+    QString transFile = p.MissionData("base",
+                                      "translations/MissionName2DataDir.trn");
+
+    // Get the mission translation manager ready
+    PvlToPvlTranslationManager missionXlater(lab, transFile);
+
+    // Get the mission name so we can search the correct DB's for kernels
+    QString mission = missionXlater.Translate("MissionName");
+
+    if (options.web) {
+      requestSpice(icube, *icube->label(), mission, options, log);
+    }
+    else {
+      // Get system base kernels
+      unsigned int allowed = 0;
+      unsigned int allowedCK = 0;
+      unsigned int allowedSPK = 0;
+
+      if (options.ckpredicted)
+        allowedCK |= Kernel::typeEnum("PREDICTED");
+      if (options.ckrecon)
+        allowedCK |= Kernel::typeEnum("RECONSTRUCTED");
+      if (options.cksmithed)
+        allowedCK |= Kernel::typeEnum("SMITHED");
+      if (options.cknadir)
+        allowedCK |= Kernel::typeEnum("NADIR");
+      if (options.spkpredicted)
+        allowedSPK |= Kernel::typeEnum("PREDICTED");
+      if (options.spkrecon)
+        allowedSPK |= Kernel::typeEnum("RECONSTRUCTED");
+      if (options.spksmithed)
+        allowedSPK |= Kernel::typeEnum("SMITHED");
+
+      KernelDb baseKernels(allowed);
+      KernelDb ckKernels(allowedCK);
+      KernelDb spkKernels(allowedSPK);
+
+      baseKernels.loadSystemDb(mission, lab);
+      ckKernels.loadSystemDb(mission, lab);
+      spkKernels.loadSystemDb(mission, lab);
+
+      Kernel lk, pck, targetSpk, fk, ik, sclk, spk, iak, dem, exk;
+      QList< priority_queue<Kernel> > ck;
+      lk        = baseKernels.leapSecond(lab);
+      pck       = baseKernels.targetAttitudeShape(lab);
+      targetSpk = baseKernels.targetPosition(lab);
+      ik        = baseKernels.instrument(lab);
+      sclk      = baseKernels.spacecraftClock(lab);
+      iak       = baseKernels.instrumentAddendum(lab);
+      fk        = ckKernels.frame(lab);
+      ck        = ckKernels.spacecraftPointing(lab);
+      spk       = spkKernels.spacecraftPosition(lab);
+
+      if (options.cknadir) {
+        // Only add nadir if no spacecraft pointing found, so we will set (priority) type to 0.
+        QStringList nadirCk;
+        nadirCk.push_back("Nadir");
+        // if a priority queue already exists, add Nadir with low priority of 0
+        if (ck.size() > 0) {
+          ck[0].push(Kernel((Kernel::Type)0, nadirCk));
+        }
+        // if no queue exists, create a nadir queue
+        else {
+          priority_queue<Kernel> nadirQueue;
+          nadirQueue.push(Kernel((Kernel::Type)0, nadirCk));
+          ck.push_back(nadirQueue);
+        }
+      }
+
+      // Get user defined kernels and override ones already found
+      getUserEnteredKernel("LS", lk, options);
+      getUserEnteredKernel("PCK", pck, options);
+      getUserEnteredKernel("TSPK", targetSpk, options);
+      getUserEnteredKernel("FK", fk, options);
+      getUserEnteredKernel("IK", ik, options);
+      getUserEnteredKernel("SCLK", sclk, options);
+      getUserEnteredKernel("SPK", spk, options);
+      getUserEnteredKernel("IAK", iak, options);
+      getUserEnteredKernel("EXTRA", exk, options);
+
+      // Get shape kernel
+      if (options.shape == spiceinitOptions::USER) {
+        getUserEnteredKernel("MODEL", dem, options);
+      }
+      else if (options.shape == spiceinitOptions::SYSTEM) {
+        dem = baseKernels.dem(lab);
+      }
+
+      bool kernelSuccess = false;
+
+      if ((ck.size() == 0 || ck.at(0).size() == 0) && options.ck.empty()) {
+        // no ck was found in system and user did not enter ck, throw error
+        throw IException(IException::Unknown,
+                         "No Camera Kernels found for the image [" + ui.GetFileName("FROM")
+                         + "]",
+                         _FILEINFO_);
+      }
+      else if (ui.WasEntered("CK")) {
+        // if user entered ck
+        // empty ck queue list found in system
+        while (ck.size()) {
+          ck.pop_back();
+        }
+        // create queue with empty kernel so ck[0].size() != 0,
+        // this allows us to get into the coming while loop
+        priority_queue< Kernel > emptyKernelQueue;
+        emptyKernelQueue.push(Kernel());
+        ck.push_back(emptyKernelQueue);
+      }
+
+      // while the first queue is not empty, loop through it until tryKernels() succeeds
+      while (ck.at(0).size() != 0 && !kernelSuccess) {
+        // create an empty kernel
+        Kernel realCkKernel;
+        QStringList ckKernelList;
+
+        // if the user entered ck kernels, populate the ck kernel list with the
+        // user entered files
+        if (ui.WasEntered("CK")) {
+          vector<QString> userEnteredCks;
+          ui.GetAsString("CK", userEnteredCks);
+          // convert user entered std vector to QStringList and add to ckKernelList
+          ckKernelList = QVector<QString>::fromStdVector(userEnteredCks).toList();
+        }
+        else {// loop through cks found in the system
+
+          // Add the list of cks from each Kernel object at the top of each
+          // priority queue. If multiple priority queues exist, we will not
+          // pop of the top priority from any of the queues except for the
+          // first one.  So each time tryKernels() fails, the same files
+          // will be loaded with the next priority from the first queue.
+          for (int i = ck.size() - 1; i >= 0; i--) {
+            if (ck.at(i).size() != 0) {
+              Kernel topPriority = ck.at(i).top();
+              ckKernelList.append(topPriority.kernels());
+              // set the type to equal the type of the to priority of the first
+              //queue
+              realCkKernel.setType(topPriority.type());
+            }
+          }
+
+        }
+        // pop the top priority ck off only the first queue so that the next
+        // iteration will test the next highest priority of the first queue with
+        // the top priority of each of the other queues.
+        ck[0].pop();
+
+        // Merge SpacecraftPointing and Frame into ck
+        for (int i = 0; i < fk.size(); i++) {
+          ckKernelList.push_back(fk[i]);
+        }
+
+        realCkKernel.setKernels(ckKernelList);
+
+        kernelSuccess = tryKernels(icube, p, options, log, lk, pck, targetSpk,
+                                   realCkKernel, fk, ik, sclk, spk, iak, dem, exk);
+      }
+
+      if (!kernelSuccess)
+        throw IException(IException::Unknown,
+                         "Unable to initialize camera model",
+                         _FILEINFO_);
+    }
+    p.EndProcess();
+  }
 
   /**
    *
    */
-  void spiceinit(UserInterface &ui, Pvl *appLog) {
+  void spiceinit(UserInterface &ui, Pvl *log) {
     // Open the input cube
     Process p;
     CubeAttributeInput cai;
@@ -99,7 +322,7 @@ namespace Isis {
     QString mission = missionXlater.Translate("MissionName");
 
     if (ui.GetBoolean("WEB")) {
-      requestSpice(icube, *icube->label(), mission, ui, appLog);
+      requestSpice(icube, *icube->label(), mission, ui, log);
     }
     else {
       // Get system base kernels
@@ -243,7 +466,7 @@ namespace Isis {
 
         realCkKernel.setKernels(ckKernelList);
 
-        kernelSuccess = tryKernels(icube, p, ui, appLog, lk, pck, targetSpk,
+        kernelSuccess = tryKernels(icube, p, ui, log, lk, pck, targetSpk,
                                    realCkKernel, fk, ik, sclk, spk, iak, dem, exk);
       }
 
@@ -282,7 +505,7 @@ namespace Isis {
    */
   bool tryKernels(Cube *icube, Process &p,
                   UserInterface &ui,
-                  Pvl *appLog,
+                  Pvl *log,
                   Kernel lk, Kernel pck,
                   Kernel targetSpk, Kernel ck,
                   Kernel fk, Kernel ik, Kernel sclk,
@@ -435,8 +658,8 @@ namespace Isis {
 
         currentKernels += source;
         icube->putGroup(currentKernels);
-        if (appLog) {
-          appLog->addGroup(currentKernels);
+        if (log) {
+          log->addGroup(currentKernels);
         }
       }
       catch(IException &e) {
@@ -446,8 +669,8 @@ namespace Isis {
           currentKernels += PvlKeyword("Error", errPvl.group(errPvl.groups() - 1)["Message"][0]);
         }
 
-        if (appLog) {
-          appLog->addGroup(currentKernels);
+        if (log) {
+          log->addGroup(currentKernels);
         }
         icube->putGroup(originalKernels);
         throw IException(e);
@@ -565,7 +788,7 @@ namespace Isis {
                     Pvl &labels,
                     QString missionName,
                     UserInterface &ui,
-                    Pvl *appLog) {
+                    Pvl *log) {
     QString instrumentId =
         labels.findGroup("Instrument", Pvl::Traverse)["InstrumentId"][0];
 
@@ -649,8 +872,8 @@ namespace Isis {
       }*/
     }
 
-    if (appLog) {
-      appLog->addGroup(logGrp);
+    if (log) {
+      log->addGroup(logGrp);
     }
 
     icube->putGroup(kernelsGroup);
