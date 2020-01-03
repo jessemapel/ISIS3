@@ -227,9 +227,9 @@ TEST_F(spiceinitTestCube, CkConfigFile) {
 
   createCube(crismLabel);
 
-  spiceinit(testCube);
+  spiceinit(&testCube);
 
-  PvlGroup kernels = testCube->group("Kernels");
+  PvlGroup kernels = testCube.group("Kernels");
   ASSERT_TRUE(kernels.hasKeyword("InstrumentPointing"));
   PvlKeyword instrumentPointing = kernels["InstrumentPointing"];
   ASSERT_EQ(instrumentPointing.size(), 4);
