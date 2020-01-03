@@ -10,6 +10,8 @@
 
 #include "gmock/gmock.h"
 
+using namespace Isis;
+
 class spiceinitTestCube : public ::testing:Test {
   protected:
     Cube testCube;
