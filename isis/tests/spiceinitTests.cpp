@@ -261,6 +261,10 @@ TEST_F(spiceinitTestCube, Default) {
         FilterId   = 4
       End_Group
 
+      Group = Kernels
+        NaifFrameCode = -27002
+      End_Group
+
       Group = Reseaus
         Line     = (5, 6, 8, 9, 10, 11, 12, 13, 14, 14, 15, 133, 134, 135, 137,
                     138, 139, 140, 141, 141, 142, 143, 144, 263, 264, 266, 267,
