@@ -109,19 +109,19 @@ TEST_F(spiceinitTestCube, PredictAndReconCK) {
   Pvl clementineLabel;
   clementineLabelStrm >> clementineLabel;
 
-  testCube.putGroup(clementineLabel.findObject("IsisCube").findGroup("Instrument"));
-  testCube.putGroup(clementineLabel.findObject("IsisCube").findGroup("Archive"));
-  testCube.putGroup(clementineLabel.findObject("IsisCube").findGroup("BandBin"));
-  testCube.putGroup(clementineLabel.findObject("IsisCube").findGroup("Kernels"));
+  testCube->putGroup(clementineLabel.findObject("IsisCube").findGroup("Instrument"));
+  testCube->putGroup(clementineLabel.findObject("IsisCube").findGroup("Archive"));
+  testCube->putGroup(clementineLabel.findObject("IsisCube").findGroup("BandBin"));
+  testCube->putGroup(clementineLabel.findObject("IsisCube").findGroup("Kernels"));
 
   spiceinitOptions options;
   options.ckrecon = true;
   options.cksmithed = true;
   options.attach = false;
 
-  spiceinit(&testCube, options);
+  spiceinit(testCube, options);
 
-  PvlGroup kernels = testCube.group("Kernels");
+  PvlGroup kernels = testCube->group("Kernels");
   ASSERT_TRUE(kernels.hasKeyword("InstrumentPointing"));
   PvlKeyword instrumentPointing = kernels["InstrumentPointing"];
   ASSERT_EQ(instrumentPointing.size(), 3);
