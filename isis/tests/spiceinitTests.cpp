@@ -1,4 +1,4 @@
-#inclue <iostream>
+#include <iostream>
 
 #include "spiceinit.h"
 
@@ -19,7 +19,7 @@ class spiceinitTestCube : public ::testing:Test {
   void SetUp() {
     testCube.open("$base/testData/isisTruth.cub");
   }
-}
+};
 
 TEST_F(spiceinitTestCube, PredictAndReconCK) {
 
