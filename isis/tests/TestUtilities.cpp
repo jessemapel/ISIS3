@@ -64,15 +64,10 @@ namespace Isis {
       const char* group2_expr,
       PvlGroup group1,
       PvlGroup group2) {
-    if (group1.isNamed() != group2.isNamed()) {
-      return ::testing::AssertionFailure() << "PvlGroups " << group1_expr
-          << " and " << group2_expr << " do not have the same name.";
-    }
-    if ( (group1.isNamed() && group2.isNamed()) &&
-         (group1.name() != group2.name()) ) {
-      return ::testing::AssertionFailure() << "PvlGroups " << group1_expr
-          << " (" << string1.name().toStdString() << ") and " << group2_expr
-          << " (" << string2.name().toStdString() << ") do not have the same name.";
+    if (group1.name() != group2.name()) {
+      return ::testing::AssertionFailure() << "PvlGroup " << group1_expr
+          << " has name (" << group1.name().toStdString() << ") and PvlGroup "
+          << group2_expr << " has name (" << group2.name().toStdString() << ").";
     }
 
     for (auto grp1KeyIt = group1.begin(); grp1KeyIt != group1.end(); grp1KeyIt++) {
@@ -91,14 +86,14 @@ namespace Isis {
         if (!grp1KeyIt->isEquivalent(group2Key[i], i)) {
           return ::testing::AssertionFailure() << "Keyword (" << grp1KeyIt->name().toStdString()
               << ") has value (" << (*grp1KeyIt)[i].toStdString() << ") in PvlGroup "
-              << group1_expr << " and value (" << group2Key[i].toStdString() ") in PvlGroup "
-              << group2_expr << " at index " << i;
+              << group1_expr << " and value (" << group2Key[i].toStdString()
+              << ") in PvlGroup " << group2_expr << " at index " << i;
         }
         if (grp1KeyIt->unit(i) != group2Key.unit(i)) {
           return ::testing::AssertionFailure() << "Keyword (" << grp1KeyIt->name().toStdString()
               << ") has units (" << grp1KeyIt->unit(i).toStdString() << ") in PvlGroup "
-              << group1_expr << " and units (" << group2Key.unit(i).toStdString() ") in PvlGroup "
-              << group2_expr << " at index " << i;
+              << group1_expr << " and units (" << group2Key.unit(i).toStdString()
+              << ") in PvlGroup " << group2_expr << " at index " << i;
         }
       }
     }
