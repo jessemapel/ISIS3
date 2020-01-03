@@ -6,6 +6,7 @@
 
 #include "Cube.h"
 #include "CubeAttribute.h"
+#include "PixelType.h"
 #include "Pvl.h"
 #include "PvlGroup.h"
 #include "PvlKeyword.h"
@@ -17,19 +18,30 @@ using namespace Isis;
 
 class spiceinitTestCube : public ::testing::Test {
   protected:
-    Cube *testCube;
+    Cube testCube;
     QTemporaryFile tempFile;
 
   void SetUp() override {
-    Cube baseCube("$base/testData/isisTruth.cub", "r");
-    CubeAttributeOutput cubeAtts;
     tempFile.open();
-    testCube = baseCube.copy(tempFile.fileName(), cubeAtts);
+    testCube.setPixelType(PixelType::UNSIGNEDBYTE);
   }
 
   void TearDown() override {
-    if (testCube) {
-      delete testCube;
+    if (testCube.isOpen()) {
+      testCube.close();
+    }
+  }
+
+  void createCube(Pvl &label) {
+    PvlObject cubeLabel = label.findObject("IsisCube");
+    PvlGroup dimensions = cubeLabel.findObject("Core").findGroup("Dimensions");
+    testCube.setDimensions(dimensions["Samples"],
+                          dimensions["Lines"],
+                          dimensions["Bands"]);
+    testCube.create(tempFile.fileName());
+
+    for (auto grpIt = cubeLabel.beginGroup(); grpIt!= cubeLabel.endGroup(); grpIt++) {
+      testCube.putGroup(*grpIt);
     }
   }
 };
@@ -110,19 +122,16 @@ TEST_F(spiceinitTestCube, PredictAndReconCK) {
   Pvl clementineLabel;
   clementineLabelStrm >> clementineLabel;
 
-  testCube->putGroup(clementineLabel.findObject("IsisCube").findGroup("Instrument"));
-  testCube->putGroup(clementineLabel.findObject("IsisCube").findGroup("Archive"));
-  testCube->putGroup(clementineLabel.findObject("IsisCube").findGroup("BandBin"));
-  testCube->putGroup(clementineLabel.findObject("IsisCube").findGroup("Kernels"));
+  createCube(clementineLabel);
 
   spiceinitOptions options;
   options.ckrecon = true;
   options.cksmithed = true;
   options.attach = false;
 
-  spiceinit(testCube, options);
+  spiceinit(&testCube, options);
 
-  PvlGroup kernels = testCube->group("Kernels");
+  PvlGroup kernels = testCube.group("Kernels");
   ASSERT_TRUE(kernels.hasKeyword("InstrumentPointing"));
   PvlKeyword instrumentPointing = kernels["InstrumentPointing"];
   ASSERT_EQ(instrumentPointing.size(), 3);
@@ -216,15 +225,7 @@ TEST_F(spiceinitTestCube, CkConfigFile) {
   Pvl crismLabel;
   crismLabelStrm >> crismLabel;
 
-  PvlGroup crismDimensions = crismLabel.findObject("IsisCube").findObject("Core").findGroup("Dimensions");
-  testCube->close();
-  testCube->setDimensions(crismDimensions["Samples"],
-                          crismDimensions["Lines"],
-                          crismDimensions["Bands"]);
-  testCube->reopen("rw");
-  testCube->putGroup(crismLabel.findObject("IsisCube").findGroup("Instrument"));
-  testCube->putGroup(crismLabel.findObject("IsisCube").findGroup("Archive"));
-  testCube->putGroup(crismLabel.findObject("IsisCube").findGroup("Kernels"));
+  createCube(crismLabel);
 
   spiceinit(testCube);
 
