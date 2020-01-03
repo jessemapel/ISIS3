@@ -12,7 +12,7 @@
 
 using namespace Isis;
 
-class spiceinitTestCube : public ::testing:Test {
+class spiceinitTestCube : public ::testing::Test {
   protected:
     Cube testCube;
 
