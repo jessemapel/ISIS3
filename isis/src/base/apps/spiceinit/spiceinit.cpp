@@ -644,7 +644,7 @@ namespace Isis {
       default:
         throw IException(IException::User,
                          "Invalid shape option for spice server[" +
-                         static_cast<int>(options.shape) + "].",
+                         toString(static_cast<int>(options.shape)) + "].",
                          _FILEINFO_);
         break;
     }
@@ -653,7 +653,7 @@ namespace Isis {
       if (options.model.size() != 1) {
         throw IException(IException::User,
                          "Exactly one shape model must be entered when shape is "
-                         "set to USER; [" + static_cast<int>(options.model.size()) +
+                         "set to USER; [" + toString(options.model.size()) +
                          "] shape models were entered.",
                          _FILEINFO_);
       }
