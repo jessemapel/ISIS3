@@ -21,7 +21,7 @@ class spiceinitTestCube : public ::testing::Test {
     QTemporaryFile tempFile;
 
   void SetUp() override {
-    Cube baseCube("$base/testData/isisTruth.cub", "rw");
+    Cube baseCube("$base/testData/isisTruth.cub", "r");
     CubeAttributeOutput cubeAtts;
     tempFile.open();
     testCube = baseCube.copy(tempFile.fileName(), cubeAtts);
