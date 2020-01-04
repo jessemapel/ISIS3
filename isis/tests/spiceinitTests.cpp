@@ -515,11 +515,11 @@ TEST_F(spiceinitTestCube, Padding) {
 
   ASSERT_TRUE(kernels.hasKeyword("StartPadding"));
   ASSERT_EQ(kernels["StartPadding"].size(), 1);
-  EXPECT_EQ(AssertQStringsEqual, kernels["StartPadding"][0], "1.1");
-  EXPECT_EQ(AssertQStringsEqual, kernels["StartPadding"].unit(0), "seconds");
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, kernels["StartPadding"][0], "1.1");
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, kernels["StartPadding"].unit(0), "seconds");
 
   ASSERT_TRUE(kernels.hasKeyword("EndPadding"));
   ASSERT_EQ(kernels["EndPadding"].size(), 1);
-  EXPECT_EQ(AssertQStringsEqual, kernels["EndPadding"][0], "0.5");
-  EXPECT_EQ(AssertQStringsEqual, kernels["EndPadding"].unit(0), "seconds");
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, kernels["EndPadding"][0], "0.5");
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, kernels["EndPadding"].unit(0), "seconds");
 }
