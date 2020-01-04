@@ -406,12 +406,12 @@ TEST_F(spiceinitTestCube, Nadir) {
 
   createCube(label);
 
-  spiceinit(&testCube);
-
   spiceinitOptions options;
   options.cknadir = true;
   options.attach = false;
   options.tspk.append("$base/kernels/spk/de405.bsp");
+
+  spiceinit(&testCube, options);
 
   PvlGroup kernels = testCube.group("Kernels");
 
