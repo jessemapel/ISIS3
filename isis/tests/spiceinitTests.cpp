@@ -330,3 +330,91 @@ TEST_F(spiceinitTestCube, Default) {
 
   EXPECT_PRED_FORMAT2(AssertPvlGroupEqual, secondKernels, kernels);
 }
+
+
+TEST_F(spiceinitTestCube, Nadir) {
+
+  std::istringstream labelStrm(R"(
+    Object = IsisCube
+      Object = Core
+        StartByte   = 65537
+        Format      = Tile
+        TileSamples = 128
+        TileLines   = 128
+
+        Group = Dimensions
+          Samples = 1536
+          Lines   = 2688
+          Bands   = 1
+        End_Group
+
+        Group = Pixels
+          Type       = UnsignedByte
+          ByteOrder  = Lsb
+          Base       = 0.0
+          Multiplier = 1.0
+        End_Group
+      End_Object
+
+      Group = Instrument
+        SpacecraftName        = "MARS GLOBAL SURVEYOR"
+        InstrumentId          = MOC-NA
+        TargetName            = Mars
+        StartTime             = 2000-03-19T04:51:46.63
+        StopTime              = 2000-03-19T04:51:47.92
+        CrosstrackSumming     = 1
+        DowntrackSumming      = 1
+        FocalPlaneTemperature = 270.3
+        GainModeId            = 0A
+        LineExposureDuration  = 0.482100 <milliseconds>
+        MissionPhaseName      = MAPPING
+        OffsetModeId          = 38
+        SpacecraftClockCount  = 637908733:72
+        RationaleDesc         = "Sample of smooth plains in highlands "
+        OrbitNumber           = 4604
+        FirstLineSample       = 1
+      End_Group
+
+      Group = Archive
+        DataSetId           = MGS-M-MOC-NA/WA-2-DSDP-L0-V1.0
+        ProductId           = M13/01260
+        ProducerId          = MGS_MOC_TEAM
+        ProductCreationTime = 2001-03-01T03:00:38
+        SoftwareName        = "makepds 1.9"
+        UploadId            = UNK
+        DataQualityDesc     = OK
+        ImageNumber         = 07901260
+        ImageKeyId          = 6379001260
+      End_Group
+
+      Group = BandBin
+        FilterName   = BROAD_BAND
+        OriginalBand = 1
+        Center       = 0.7 <micrometers>
+        Width        = 0.4 <micrometers>
+      End_Group
+
+      Group = Kernels
+        NaifFrameCode = -94031
+      End_Group
+    End_Object
+  End
+  )");
+
+  Pvl label;
+  labelStrm >> label;
+
+  createCube(label);
+
+  spiceinit(&testCube);
+
+  spiceinitOptions options;
+  options.cknadir = true;
+  options.attach = false;
+
+  PvlGroup kernels = testCube.group("Kernels");
+
+  ASSERT_TRUE(kernels.hasKeyword("InstrumentPointing"));
+  ASSERT_EQ(kernels["InstrumentPointing"].size(), 1);
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, kernels["InstrumentPointing"][0], "Nadir");
+}
