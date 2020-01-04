@@ -409,7 +409,7 @@ TEST_F(spiceinitTestCube, Nadir) {
   spiceinitOptions options;
   options.cknadir = true;
   options.attach = false;
-  options.tspk.append("$base/kernels/spk/de405.bsp");
+  options.tspk.push_back("$base/kernels/spk/de405.bsp");
 
   spiceinit(&testCube, options);
 
