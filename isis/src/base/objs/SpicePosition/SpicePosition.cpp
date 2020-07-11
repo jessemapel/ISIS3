@@ -305,7 +305,7 @@ namespace Isis {
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
 
-    std::cout << "Loading cache from SPICE" << std::endl;
+    std::cout << std::setprecision(15) << "Loading cache from SPICE" << std::endl;
 
     // Save full cache parameters
     p_fullCacheStartTime = startTime;
@@ -333,6 +333,17 @@ namespace Isis {
 
     m_state = new ale::States(p_cacheTime, stateCache);
     p_source = Memcache;
+
+    std::cout << std::setprecision(15) << "Created States cache with " << p_cacheTime.size() << " elements" << std::endl;
+    for (size_t i = 0; i < p_cacheTime.size(); i++) {
+      std::cout << std::setprecision(15) << "  Time: (" << p_cacheTime[i]
+                << ") State: (" << stateCache[i].position.x << ", "
+                                << stateCache[i].position.y << ", "
+                                << stateCache[i].position.z << ", "
+                                << stateCache[i].velocity.x << ", "
+                                << stateCache[i].velocity.y << ", "
+                                << stateCache[i].velocity.z << ")" << std::endl;
+    }
   }
 
 
@@ -368,7 +379,7 @@ namespace Isis {
         throw IException(IException::Programmer, "SpicePosition::LoadCache(json) only supports Spice source", _FILEINFO_);
     }
 
-    std::cout << "Loading JSON cache" << std::endl;
+    std::cout << std::setprecision(15) << "Loading JSON cache" << std::endl;
 
     // Load the full cache time information from the label if available
     p_fullCacheStartTime = isdPos["spk_table_start_time"].get<double>();
@@ -434,7 +445,7 @@ namespace Isis {
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
 
-    std::cout << "Loading Table cache" << std::endl;
+    std::cout << std::setprecision(15) << "Loading Table cache" << std::endl;
 
     // Load the full cache time information from the label if available
     if(table.Label().hasKeyword("SpkTableStartTime")) {
@@ -1291,7 +1302,7 @@ namespace Isis {
    */
   void SpicePosition::SetEphemerisTimeMemcache() {
 
-    std::cout << "Setting ephemeris time memcache" << std::endl;
+    std::cout << std::setprecision(15) << "Setting ephemeris time memcache" << std::endl;
 
     ale::State state;
     if (cacheSize() == 1) {
@@ -1311,6 +1322,14 @@ namespace Isis {
       p_velocity[1] = state.velocity.y;
       p_velocity[2] = state.velocity.z;
     }
+
+    std::cout << std::setprecision(15) << "State: ("
+              << state.position.x << ", "
+              << state.position.y << ", "
+              << state.position.z << ", "
+              << state.velocity.x << ", "
+              << state.velocity.y << ", "
+              << state.velocity.z << ")" << std::endl;
   }
 
 
@@ -1327,8 +1346,8 @@ namespace Isis {
    */
   void SpicePosition::SetEphemerisTimeHermiteCache() {
 
-    std::cout << "Setting ephemeris time hermite" << std::endl;
-    std::cout << "States have velocity? " << (m_state->hasVelocity() ? "Yes" : "No") << std::endl;
+    std::cout << std::setprecision(15) << "Setting ephemeris time hermite" << std::endl;
+    std::cout << std::setprecision(15) << "States have velocity? " << (m_state->hasVelocity() ? "Yes" : "No") << std::endl;
 
     if (p_hasVelocity) {
       ale::State state = m_state->getState(p_et, ale::SPLINE);
@@ -1340,6 +1359,14 @@ namespace Isis {
       p_velocity[0] = state.velocity.x;
       p_velocity[1] = state.velocity.y;
       p_velocity[2] = state.velocity.z;
+
+      std::cout << std::setprecision(15) << "State: ("
+                << state.position.x << ", "
+                << state.position.y << ", "
+                << state.position.z << ", "
+                << state.velocity.x << ", "
+                << state.velocity.y << ", "
+                << state.velocity.z << ")" << std::endl;
     }
     else {
       throw IException(IException::Io, "No velocities available. Cannot calculate Hermite Cache.",
@@ -1362,7 +1389,7 @@ namespace Isis {
    */
   void SpicePosition::SetEphemerisTimePolyFunction() {
 
-    std::cout << "Setting ephemeris time polynomial" << std::endl;
+    std::cout << std::setprecision(15) << "Setting ephemeris time polynomial" << std::endl;
 
     // Create the empty functions
     Isis::PolynomialUnivariate functionX(p_degree);
@@ -1413,7 +1440,7 @@ namespace Isis {
    */
   void SpicePosition::SetEphemerisTimePolyFunctionOverHermiteConstant() {
 
-    std::cout << "Setting ephemeris time polynomial over hermite" << std::endl;
+    std::cout << std::setprecision(15) << "Setting ephemeris time polynomial over hermite" << std::endl;
 
     SetEphemerisTimeHermiteCache();
     std::vector<double> hermiteCoordinate = p_coordinate;
@@ -1445,7 +1472,7 @@ namespace Isis {
    */
   void SpicePosition::SetEphemerisTimeSpice() {
 
-    std::cout << "Setting ephemeris time spice" << std::endl;
+    std::cout << std::setprecision(15) << "Setting ephemeris time spice" << std::endl;
 
     double state[6];
     bool hasVelocity;
@@ -1580,7 +1607,7 @@ namespace Isis {
    */
   void SpicePosition::LoadTimeCache() {
 
-    std::cout << "Loading time cache" << std::endl;
+    std::cout << std::setprecision(15) << "Loading time cache" << std::endl;
 
     // Loop and load the time cache
     double cacheSlope = 0.0;
