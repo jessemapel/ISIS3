@@ -1328,6 +1328,7 @@ namespace Isis {
   void SpicePosition::SetEphemerisTimeHermiteCache() {
 
     std::cout << "Setting ephemeris time hermite" << std::endl;
+    std::cout << "States have velocity? " << (m_state->hasVelocity() ? "Yes" : "No") << std::endl;
 
     if (p_hasVelocity) {
       ale::State state = m_state->getState(p_et, ale::SPLINE);
