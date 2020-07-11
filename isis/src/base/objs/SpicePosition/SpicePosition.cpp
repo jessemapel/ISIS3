@@ -305,6 +305,8 @@ namespace Isis {
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
 
+    std::cout << "Loading cache from SPICE" << std::endl;
+
     // Save full cache parameters
     p_fullCacheStartTime = startTime;
     p_fullCacheEndTime = endTime;
@@ -321,7 +323,7 @@ namespace Isis {
         stateCache.push_back(ale::State(p_coordinate, p_velocity));
       }
       else {
-        stateCache.push_back(ale::State(p_coordinate));
+        stateCache.push_back(ale::State(ale::Vec3d(p_coordinate)));
       }
     }
 
@@ -365,6 +367,8 @@ namespace Isis {
     if (p_source != Spice) {
         throw IException(IException::Programmer, "SpicePosition::LoadCache(json) only supports Spice source", _FILEINFO_);
     }
+
+    std::cout << "Loading JSON cache" << std::endl;
 
     // Load the full cache time information from the label if available
     p_fullCacheStartTime = isdPos["spk_table_start_time"].get<double>();
@@ -429,6 +433,8 @@ namespace Isis {
       QString msg = "A SpicePosition cache has already been created";
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
+
+    std::cout << "Loading Table cache" << std::endl;
 
     // Load the full cache time information from the label if available
     if(table.Label().hasKeyword("SpkTableStartTime")) {
@@ -497,7 +503,7 @@ namespace Isis {
           stateCache.push_back(ale::State(j2000Coord, j2000Velocity));
         }
         else {
-          stateCache.push_back(ale::Vec3d(j2000Coord));
+          stateCache.push_back(ale::State(ale::Vec3d(j2000Coord)));
         }
         p_cacheTime.push_back((double)rec[inext]);
       }
@@ -1567,6 +1573,9 @@ namespace Isis {
    *
    */
   void SpicePosition::LoadTimeCache() {
+
+    std::cout << "Loading time cache" << std::endl;
+
     // Loop and load the time cache
     double cacheSlope = 0.0;
 
