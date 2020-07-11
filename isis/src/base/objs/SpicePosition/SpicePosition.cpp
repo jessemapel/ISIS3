@@ -305,7 +305,7 @@ namespace Isis {
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
 
-    // std::cout << "Loading cache from SPICE" << std::endl;
+    std::cout << "Loading cache from SPICE" << std::endl;
 
     // Save full cache parameters
     p_fullCacheStartTime = startTime;
@@ -368,7 +368,7 @@ namespace Isis {
         throw IException(IException::Programmer, "SpicePosition::LoadCache(json) only supports Spice source", _FILEINFO_);
     }
 
-    // std::cout << "Loading JSON cache" << std::endl;
+    std::cout << "Loading JSON cache" << std::endl;
 
     // Load the full cache time information from the label if available
     p_fullCacheStartTime = isdPos["spk_table_start_time"].get<double>();
@@ -434,7 +434,7 @@ namespace Isis {
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
 
-    // std::cout << "Loading Table cache" << std::endl;
+    std::cout << "Loading Table cache" << std::endl;
 
     // Load the full cache time information from the label if available
     if(table.Label().hasKeyword("SpkTableStartTime")) {
@@ -1290,6 +1290,9 @@ namespace Isis {
    *            method)
    */
   void SpicePosition::SetEphemerisTimeMemcache() {
+
+    std::cout << "Setting ephemeris time memcache" << std::endl;
+
     ale::State state;
     if (cacheSize() == 1) {
       state = m_state->getStates().front();
@@ -1323,6 +1326,9 @@ namespace Isis {
    *   @history 2009-08-03 Jeannie Walldren - Original version
    */
   void SpicePosition::SetEphemerisTimeHermiteCache() {
+
+    std::cout << "Setting ephemeris time hermite" << std::endl;
+
     if (p_hasVelocity) {
       ale::State state = m_state->getState(p_et, ale::SPLINE);
 
@@ -1354,6 +1360,9 @@ namespace Isis {
    *   @history 2011-01-05 Debbie A. Cook - Original version
    */
   void SpicePosition::SetEphemerisTimePolyFunction() {
+
+    std::cout << "Setting ephemeris time polynomial" << std::endl;
+
     // Create the empty functions
     Isis::PolynomialUnivariate functionX(p_degree);
     Isis::PolynomialUnivariate functionY(p_degree);
@@ -1402,6 +1411,9 @@ namespace Isis {
    *   @history 2012-01-25 Debbie A. Cook - Original version
    */
   void SpicePosition::SetEphemerisTimePolyFunctionOverHermiteConstant() {
+
+    std::cout << "Setting ephemeris time polynomial over hermite" << std::endl;
+
     SetEphemerisTimeHermiteCache();
     std::vector<double> hermiteCoordinate = p_coordinate;
 
@@ -1431,6 +1443,8 @@ namespace Isis {
    *            method)
    */
   void SpicePosition::SetEphemerisTimeSpice() {
+
+    std::cout << "Setting ephemeris time spice" << std::endl;
 
     double state[6];
     bool hasVelocity;
@@ -1565,7 +1579,7 @@ namespace Isis {
    */
   void SpicePosition::LoadTimeCache() {
 
-    // std::cout << "Loading time cache" << std::endl;
+    std::cout << "Loading time cache" << std::endl;
 
     // Loop and load the time cache
     double cacheSlope = 0.0;
