@@ -1290,7 +1290,7 @@ namespace Isis {
    *            method)
    */
   void SpicePosition::SetEphemerisTimeMemcache() {
-    ale::State state
+    ale::State state;
     if (cacheSize() == 1) {
       state = m_state->getStates().front();
     }
