@@ -305,7 +305,7 @@ namespace Isis {
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
 
-    std::cout << "Loading cache from SPICE" << std::endl;
+    // std::cout << "Loading cache from SPICE" << std::endl;
 
     // Save full cache parameters
     p_fullCacheStartTime = startTime;
@@ -368,7 +368,7 @@ namespace Isis {
         throw IException(IException::Programmer, "SpicePosition::LoadCache(json) only supports Spice source", _FILEINFO_);
     }
 
-    std::cout << "Loading JSON cache" << std::endl;
+    // std::cout << "Loading JSON cache" << std::endl;
 
     // Load the full cache time information from the label if available
     p_fullCacheStartTime = isdPos["spk_table_start_time"].get<double>();
@@ -434,7 +434,7 @@ namespace Isis {
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
 
-    std::cout << "Loading Table cache" << std::endl;
+    // std::cout << "Loading Table cache" << std::endl;
 
     // Load the full cache time information from the label if available
     if(table.Label().hasKeyword("SpkTableStartTime")) {
@@ -831,16 +831,6 @@ namespace Isis {
 
     // Set velocity vector to true since it is calculated
     p_hasVelocity = true;
-
-    // Calculate new postition coordinates from polynomials fit to coordinates &
-    // fill cache
-//    std::cout << "Before" << std::endl;
-//    double savetime = p_cacheTime.at(0);
-//    SetEphemerisTime(savetime);
-//    std::cout << "     at time " << savetime << std::endl;
-//    for (int i=0; i<3; i++) {
-//      std::cout << p_coordinate[i] << std::endl;
-//    }
 
 
     // find time for the extremum of each polynomial
@@ -1300,22 +1290,23 @@ namespace Isis {
    *            method)
    */
   void SpicePosition::SetEphemerisTimeMemcache() {
+    ale::State state
+    if (cacheSize() == 1) {
+      state = m_state->getStates().front();
+    }
+    else {
+      state = m_state->getState(p_et, ale::LINEAR);
+    }
+
+
+    p_coordinate[0] = state.position.x;
+    p_coordinate[1] = state.position.y;
+    p_coordinate[2] = state.position.z;
 
     if (p_hasVelocity){
-      ale::State state = m_state->getState(p_et, ale::LINEAR);
-      p_coordinate[0] = state.position.x;
-      p_coordinate[1] = state.position.y;
-      p_coordinate[2] = state.position.z;
-
       p_velocity[0] = state.velocity.x;
       p_velocity[1] = state.velocity.y;
       p_velocity[2] = state.velocity.z;
-    }
-    else{
-      ale::Vec3d position = m_state->getPosition(p_et, ale::LINEAR);
-      p_coordinate[0] = position.x;
-      p_coordinate[1] = position.y;
-      p_coordinate[2] = position.z;
     }
   }
 
@@ -1574,7 +1565,7 @@ namespace Isis {
    */
   void SpicePosition::LoadTimeCache() {
 
-    std::cout << "Loading time cache" << std::endl;
+    // std::cout << "Loading time cache" << std::endl;
 
     // Loop and load the time cache
     double cacheSlope = 0.0;
