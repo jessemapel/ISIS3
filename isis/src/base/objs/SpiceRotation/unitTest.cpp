@@ -19,6 +19,8 @@ using json = nlohmann::json;
 using namespace std;
 using namespace Isis;
 
+void printRotationMatrix(SpiceRotation *rot, int decimals = 15);
+
 //TODO test loadPCFromSpice() and loadPCFromTable() methods
 //TODO see end of unit test for exceptions that need to be tested
 
@@ -72,6 +74,7 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     rot.SetEphemerisTime(t);
+    printRotationMatrix(&rot);
     vector<double> CJ = rot.Matrix();
 
     cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
@@ -888,4 +891,24 @@ int main(int argc, char *argv[]) {
 
   // SetEphemerisTimeSpice()
   //TODO test its 3 exceptions
+}
+
+/**
+ * Print the set rotation matrix in a SpiceRotation object to standard out.
+ *
+ * @param rot SpiceRotation to print out the currently set rotation of
+ * @param decimals The number of decimal places to round to
+ */
+void printRotationMatrix(SpiceRotation *rot, int decimals) {
+  vector<double> CJ = rot->Matrix();
+  double scaling = pow(10, decimals);
+  cout << "CJ(" << t << ") = " << round(CJ[0] * scaling) / scaling << " "
+                               << round(CJ[1] * scaling) / scaling << " "
+                               << round(CJ[2] * scaling) / scaling << endl;
+  cout << "        " << round(CJ[3] * scaling) / scaling << " "
+                     << round(CJ[4] * scaling) / scaling << " "
+                     << round(CJ[5] * scaling) / scaling << endl;
+  cout << "        " << round(CJ[6] * scaling) / scaling << " "
+                     << round(CJ[7] * scaling) / scaling << " "
+                     << round(CJ[8] * scaling) / scaling << endl;
 }
