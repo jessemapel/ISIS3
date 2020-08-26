@@ -75,11 +75,6 @@ int main(int argc, char *argv[]) {
     double t = startTime + (double) i * slope;
     rot.SetEphemerisTime(t);
     printRotationMatrix(&rot);
-    vector<double> CJ = rot.Matrix();
-
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
 
     if (rot.HasAngularVelocity()) {
       vector<double> av = rot.AngularVelocity();
@@ -94,11 +89,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     rot.SetEphemerisTime(t);
-    vector<double> CJ = rot.Matrix();
     cout << "Time           = " << rot.EphemerisTime() << endl;
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&rot):
 
     if (rot.HasAngularVelocity()) {
       vector<double> av = rot.AngularVelocity();
@@ -121,11 +113,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     rot.SetEphemerisTime(t);
-    vector<double> CJ = rot.Matrix();
     cout << "Time           = " << rot.EphemerisTime() << endl;
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&rot);
 
     if (rot.HasAngularVelocity()) {
       vector<double> av = rot.AngularVelocity();
@@ -159,11 +148,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     rot2.SetEphemerisTime(t);
-    vector<double> CJ = rot2.Matrix();
     cout << "Time           = " << rot2.EphemerisTime() << endl;
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&rot2);
 
     if (rot2.HasAngularVelocity()) {
       vector<double> av = rot2.AngularVelocity();
@@ -188,11 +174,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     rot3.SetEphemerisTime(t);
-    vector<double> CJ = rot3.Matrix();
     cout << "Time           = " << rot3.EphemerisTime() << endl;
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&rot3);
 
     if (rot3.HasAngularVelocity()) {
       vector<double> av = rot3.AngularVelocity();
@@ -261,11 +244,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     rot4.SetEphemerisTime(t);
-    vector<double> CJ = rot4.Matrix();
     cout << "Time           = " << rot4.EphemerisTime() << endl;
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&rot4);
 
     if (rot4.HasAngularVelocity()) {
       vector<double> av = rot4.AngularVelocity();
@@ -284,11 +264,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     rot5.SetEphemerisTime(t);
-    vector<double> CJ = rot5.Matrix();
     cout << "Time           = " << rot5.EphemerisTime() << endl;
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&rot5);
 
     if (rot5.HasAngularVelocity()) {
       vector<double> av = rot5.AngularVelocity();
@@ -306,11 +283,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     rot6.SetEphemerisTime(t);
-    vector<double> CJ = rot6.Matrix();
     cout << "Time           = " << rot6.EphemerisTime() << endl;
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&rot6);
 //    cout << "Spacecraft (J) = " << p[0] << " " << p[1] << " " << p[2] << endl;
 
     if (rot6.HasAngularVelocity()) {
@@ -353,11 +327,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 2; i++) {
     double t = startTime + (double) i * (endTime - startTime);
     linrot.SetEphemerisTime(t);
-    vector<double> CJ = linrot.Matrix();
     cout << "Time           = " << linrot.EphemerisTime() << endl;
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&linrot);
   }
   cout << endl;
 
@@ -369,12 +340,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     naRot.SetEphemerisTime(t);
-    vector<double> CJ = naRot.Matrix();
-
     cout << "Time           = " << naRot.EphemerisTime() << endl;
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&naRot);
   }
   cout << endl;
 
@@ -489,15 +456,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     targrot.SetEphemerisTime(t);
-    vector<double> CJ = targrot.Matrix();
-    //temp debug lines to be removed...
-    //end temp debug lines   Note: uncomment the next 4 lines
     cout << "    Time           = " << targrot.EphemerisTime() << endl;
-    // vector<double> pckangles = targrot.Angles(3, 1, 3);
-    // cout << "    Angles = " << pckangles[0]*dpr_c() <<","<< pckangles[1]*dpr_c() <<","<< pckangles[2]*dpr_c() <<endl;
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&targrot);
   }
 
   cout << endl << endl << "Now PCK polynomial values for angles unadjusted ..." << endl;
@@ -518,17 +478,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 10; i++) {
     double t = startTime + (double) i * slope;
     targrot.SetEphemerisTime(t);
-    vector<double> CJ = targrot.Matrix();
-    //temp debug lines to be removed...
-    // vector<double> pckangles = targrot.Angles(3, 1, 3);
     cout << "    Time           = " << targrot.EphemerisTime() << endl;
-
-    // cout << "    Angles = " << pckangles[0]*dpr_c() <<","<< pckangles[1]*dpr_c() <<","<< pckangles[2]*dpr_c() <<endl;
-    //    cout << "    Angles = " << pckangles[0]*dpr_c() + 90. <<","<< 90. - pckangles[1]*dpr_c() <<","<< pckangles[2]*dpr_c() <<endl;
-    //end temp debug lines   Note: uncomment the next 4 lines
-    cout << "CJ(" << i << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "         " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "         " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&targrot);
   }
 
     // Test angular velocities
@@ -538,7 +489,6 @@ int main(int argc, char *argv[]) {
     cout << "SpiceRotation av = " << av[0] << " " << av[1] << " " << av[2] << endl;
     SpiceDouble tsipm[6][6];
     sxform_c ( "J2000", "IAU_IO", -15839262.24291, tsipm);
-    // sxform_c ( "J2000", "IAU_EUROPA", -646009153.46723, tsipm);
     SpiceDouble tipm[3][3];
     vector<SpiceDouble> nav(3,0.);
     xf2rav_c (tsipm, tipm, &(nav[0]) );
@@ -657,11 +607,8 @@ int main(int argc, char *argv[]) {
   cout << " }" << endl;
   for (int t = 0; t <= 3; t++) {
     aleQuatRot.SetEphemerisTime(t);
-    vector<double> CJ = aleQuatRot.Matrix();
     cout << "Time = " << aleQuatRot.EphemerisTime() << endl;
-    cout << "CJ(" << t << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "        " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "        " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&aleQuatRot);
   }
 
   // Test loading cache from ALE ISD with time dependent quaternions and AV
@@ -703,11 +650,8 @@ int main(int argc, char *argv[]) {
   cout << " }" << endl;
   for (int t = 0; t <= 3; t++) {
     aleQuatConstRot.SetEphemerisTime(t);
-    vector<double> CJ = aleQuatConstRot.Matrix();
     cout << "Time = " << aleQuatConstRot.EphemerisTime() << endl;
-    cout << "CJ(" << t << ") = " << CJ[0] << " " << CJ[1] << " " << CJ[2] << endl;
-    cout << "        " << CJ[3] << " " << CJ[4] << " " << CJ[5] << endl;
-    cout << "        " << CJ[6] << " " << CJ[7] << " " << CJ[8] << endl;
+    printRotationMatrix(&aleQuatConstRot);
   }
 
   //Test exceptions
