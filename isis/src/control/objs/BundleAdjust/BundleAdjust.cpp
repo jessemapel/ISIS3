@@ -41,6 +41,7 @@
 #include "MaximumLikelihoodWFunctions.h"
 #include "SpecialPixel.h"
 #include "StatCumProbDistDynCalc.h"
+#include "Statistics.h"
 #include "SurfacePoint.h"
 #include "Target.h"
 
@@ -1624,6 +1625,12 @@ namespace Isis {
       m_cholmodTriplet->nnz = 0;
     }
 
+    // START DEBUG
+
+    Statistics normalMatStats;
+
+    // END DEBUG
+
     int *tripletColumns = (int*) m_cholmodTriplet->i;
     int *tripletRows = (int*) m_cholmodTriplet->j;
     double *tripletValues = (double*)m_cholmodTriplet->x;
@@ -1686,6 +1693,12 @@ namespace Isis {
 
               tripletValues[numEntries] = entryValue;
 
+              // START DEBUG
+
+              normalMatStats.AddData(entryValue);
+
+              // END DEBUG
+
               numEntries++;
             }
           }
@@ -1705,12 +1718,29 @@ namespace Isis {
 
               tripletValues[numEntries] = entryValue;
 
+              // START DEBUG
+
+              normalMatStats.AddData(entryValue);
+
+              // END DEBUG
+
               numEntries++;
             }
           }
         }
       }
     }
+
+    // START DEBUG
+
+    std::cout << std::setprecision(15) << "Bundle normal matrix statistics" << std::endl;
+    std::cout << std::setprecision(15) << "Minimum: " << normalMatStats.Minimum() << std::endl;
+    std::cout << std::setprecision(15) << "Maximum: " << normalMatStats.Maximum() << std::endl;
+    std::cout << std::setprecision(15) << "Average: " << normalMatStats.Average() << std::endl;
+    std::cout << std::setprecision(15) << "StandardDeviation: " << normalMatStats.StandardDeviation() << std::endl;
+    std::cout << std::setprecision(15) << "Size: " << normalMatStats.ValidPixels() << std::endl;
+
+    // END DEBUG
 
     return true;
   }
